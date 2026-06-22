@@ -1,0 +1,30 @@
+# UI Components Guide
+
+This guide covers reusable UI component expectations for Decision Gateway.
+
+## Component Priorities
+
+- Keep decision controls stable and predictable.
+- Prefer reusable controls for repeated decision actions, material lists, source metadata, stale warnings, and notification previews.
+- Keep layouts responsive without hiding the decision question or primary actions.
+- Use accessible labels for icon-only controls.
+- Do not create local one-off button patterns when a shared control exists.
+
+## Decision Controls
+
+Decision controls should support the expected outcomes for the request type. At minimum, design for:
+
+- approve or accept;
+- reject or decline;
+- request revision or clarify;
+- insufficient materials.
+
+The source recommendation must not preselect the human decision unless the product explicitly chooses that behavior after review.
+
+## Materials
+
+Material components should show type, label, source, and safety-relevant metadata when available. Large or sensitive materials should open in the workspace, not in notifications.
+
+## Empty And Error States
+
+Missing decision questions, missing materials, stale requests, and failed material loads should have explicit states. Do not silently fall back to an approval prompt.

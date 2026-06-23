@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { decisionRequestInputSchema } from "@/lib/decision-types";
 import { createDecisionRequest } from "@/lib/decision-store";
 import { notifyDecisionRequired } from "@/lib/notifier";
+import { requireTaskDeckApiAuth } from "@/lib/taskdeck-api-auth";
 
 function getBaseUrl(request: Request): string {
   if (process.env.APP_BASE_URL) {
@@ -24,6 +25,12 @@ function logUnexpectedError(error: unknown): void {
 
 export async function POST(request: Request) {
   try {
+    const authFailure = requireTaskDeckApiAuth(request);
+
+    if (authFailure) {
+      return authFailure;
+    }
+
     const body = await request.json().catch(() => null);
     const parsed = decisionRequestInputSchema.safeParse(body);
 

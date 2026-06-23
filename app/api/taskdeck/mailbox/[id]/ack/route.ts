@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { acknowledgeMailboxItem } from "@/lib/decision-store";
+import { requireTaskDeckApiAuth } from "@/lib/taskdeck-api-auth";
 
 const mailboxAckSchema = z.object({
   taskdeckInstanceId: z.string().min(1),
@@ -21,6 +22,12 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const authFailure = requireTaskDeckApiAuth(request);
+
+    if (authFailure) {
+      return authFailure;
+    }
+
     const { id } = await params;
     const body = await request.json().catch(() => null);
     const parsed = mailboxAckSchema.safeParse(body);
@@ -35,8 +42,6 @@ export async function POST(
       );
     }
 
-    // TODO(security): Require a TaskDeck auth token before production. The
-    // current taskdeckInstanceId scope is only suitable for MVP/dev polling.
     const item = await acknowledgeMailboxItem(
       id,
       parsed.data.taskdeckInstanceId,

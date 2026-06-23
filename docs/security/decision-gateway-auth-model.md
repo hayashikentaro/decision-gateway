@@ -7,6 +7,10 @@ pairing state, mobile browser sessions, and recorded decision actions.
 
 - Slack is notification only. Slack messages contain the Decision Workspace URL
   and minimal routing context, but no pairing secrets or mobile session tokens.
+- TaskDeck server API calls can use a shared bearer token configured through
+  `DECISION_GATEWAY_TASKDECK_API_TOKEN`. The token must be configured in both
+  Decision Gateway and local TaskDeck, and must not be sent to mobile browsers,
+  QR URLs, Slack messages, or Decision Workspace pages.
 - TaskDeck is the local trust root and final gate for applying decisions to AI
   sessions.
 - Decision Gateway records decision results. It does not directly command AI
@@ -15,6 +19,28 @@ pairing state, mobile browser sessions, and recorded decision actions.
   to apply them to local AI sessions.
 - Decision Gateway does not push inward to local TaskDeck and does not expose a
   resume, apply, command, or agent-control API.
+
+## TaskDeck Server API Token
+
+`DECISION_GATEWAY_TASKDECK_API_TOKEN` is optional for local development. If it
+is unset, TaskDeck-facing APIs keep current development behavior. If it is set,
+Decision Gateway requires this exact server-side header:
+
+```text
+Authorization: Bearer <token>
+```
+
+Protected TaskDeck-facing APIs:
+
+- `POST /api/decision-requests`
+- `POST /api/pairing-requests`
+- `GET /api/taskdeck/mailbox`
+- `POST /api/taskdeck/mailbox/<id>/ack`
+
+The token is not mobile browser auth, Slack auth, OAuth, Supabase Auth, or user
+account auth. Mobile browser access uses the `dg_session` cookie after QR
+pairing. `POST /api/pairing/complete`, Decision Workspace pages, and decision
+action recording remain in the mobile browser auth domain.
 
 ## Mobile Browser Pairing
 
@@ -85,9 +111,9 @@ The current TaskDeck mailbox API is an MVP/dev surface:
 - `POST /api/taskdeck/mailbox/<id>/ack` acknowledges one item only when the
   request body has the matching `taskdeckInstanceId`.
 
-Before production, this API must require a TaskDeck auth token in addition to
-`taskdeckInstanceId` scoping. The current scope prevents accidental cross-instance
-reads in development but is not sufficient authorization.
+When `DECISION_GATEWAY_TASKDECK_API_TOKEN` is configured, this API requires the
+TaskDeck API bearer token in addition to `taskdeckInstanceId` scoping. The
+current no-token mode is for local development only.
 
 TaskDeck must validate `requestId`, `taskId`, and `sessionId` against its local
 state before applying any result. It must persist a mailbox item locally before

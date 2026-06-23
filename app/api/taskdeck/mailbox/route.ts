@@ -6,6 +6,7 @@ import {
   markMailboxItemPickedUp,
 } from "@/lib/decision-store";
 import type { StoredDecisionResultMailboxItem } from "@/lib/decision-types";
+import { requireTaskDeckApiAuth } from "@/lib/taskdeck-api-auth";
 
 const mailboxQuerySchema = z.object({
   taskdeckInstanceId: z.string().min(1),
@@ -33,6 +34,12 @@ function logUnexpectedError(error: unknown): void {
 
 export async function GET(request: Request) {
   try {
+    const authFailure = requireTaskDeckApiAuth(request);
+
+    if (authFailure) {
+      return authFailure;
+    }
+
     const url = new URL(request.url);
     const parsed = mailboxQuerySchema.safeParse({
       taskdeckInstanceId: url.searchParams.get("taskdeckInstanceId") ?? undefined,
@@ -49,8 +56,6 @@ export async function GET(request: Request) {
       );
     }
 
-    // TODO(security): Require a TaskDeck auth token before production. The
-    // current taskdeckInstanceId scope is only suitable for MVP/dev polling.
     const deliverableItems = await listDeliverableMailboxItems(
       parsed.data.taskdeckInstanceId,
       parsed.data.limit,

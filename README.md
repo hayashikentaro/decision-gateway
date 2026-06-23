@@ -75,12 +75,34 @@ Available variables:
 
 - `APP_BASE_URL`: Base URL used when generating Decision Workspace links. Defaults to the request origin when unset.
 - `DECISION_GATEWAY_STORE_PATH`: Optional exact file path for the temporary file-backed decision store.
+- `DECISION_GATEWAY_TASKDECK_API_TOKEN`: Optional shared server-side bearer token for TaskDeck-facing APIs. If set, local TaskDeck must send `Authorization: Bearer <token>`.
 - `SLACK_WEBHOOK_URL`: Optional Slack incoming webhook. When set, Decision Gateway sends the minimal notification payload to Slack.
 - `SUPABASE_URL`: Supabase project URL. Required with `SUPABASE_SERVICE_ROLE_KEY` to enable Supabase persistence.
 - `SUPABASE_SERVICE_ROLE_KEY`: Supabase service-role key used only by the server. Required with `SUPABASE_URL`.
 - `MOBILE_SESSION_COOKIE_NAME`: Secure HttpOnly mobile browser session cookie name. Defaults to `dg_session`.
 - `PAIRING_TOKEN_TTL_MINUTES`: QR pairing token lifetime. Defaults to `30`.
 - `MOBILE_SESSION_TTL_DAYS`: Mobile browser session lifetime. Defaults to `90`.
+
+### TaskDeck API Token
+
+TaskDeck-facing APIs are called by the local TaskDeck server. When
+`DECISION_GATEWAY_TASKDECK_API_TOKEN` is unset, those APIs keep their current
+local development behavior and do not require an `Authorization` header. When
+the variable is set, Decision Gateway requires this exact header on:
+
+- `POST /api/decision-requests`
+- `POST /api/pairing-requests`
+- `GET /api/taskdeck/mailbox`
+- `POST /api/taskdeck/mailbox/<id>/ack`
+
+```text
+Authorization: Bearer <token>
+```
+
+Configure the same token in Decision Gateway and TaskDeck. This token is server
+side only: it is not sent to the mobile browser, QR URLs, Slack messages, or
+Decision Workspace pages. Mobile browser access remains authenticated by the
+`dg_session` cookie, and this project does not use Supabase Auth.
 
 ### Persistence
 
@@ -133,6 +155,10 @@ curl -X POST http://localhost:3000/api/pairing-requests \
   }'
 ```
 
+If `DECISION_GATEWAY_TASKDECK_API_TOKEN` is configured, include
+`-H "Authorization: Bearer $DECISION_GATEWAY_TASKDECK_API_TOKEN"` on this
+TaskDeck server request.
+
 The response contains:
 
 ```json
@@ -179,6 +205,10 @@ curl -X POST http://localhost:3000/api/decision-requests \
   }'
 ```
 
+If `DECISION_GATEWAY_TASKDECK_API_TOKEN` is configured, include
+`-H "Authorization: Bearer $DECISION_GATEWAY_TASKDECK_API_TOKEN"` on this
+TaskDeck server request.
+
 Expected response:
 
 ```json
@@ -204,6 +234,10 @@ TaskDeck polls outward:
 ```bash
 curl "http://localhost:3000/api/taskdeck/mailbox?taskdeckInstanceId=tdi_local_dev&limit=20"
 ```
+
+If `DECISION_GATEWAY_TASKDECK_API_TOKEN` is configured, include
+`-H "Authorization: Bearer $DECISION_GATEWAY_TASKDECK_API_TOKEN"` on mailbox
+poll and ACK requests.
 
 The response returns unacknowledged deliverable items for that TaskDeck instance.
 Items that are still `pending` are marked `picked_up` when returned. Items that
@@ -256,8 +290,8 @@ curl -X POST http://localhost:3000/api/taskdeck/mailbox/drm_.../ack \
   -d '{"taskdeckInstanceId":"tdi_local_dev"}'
 ```
 
-This API is an MVP/dev surface scoped only by `taskdeckInstanceId`. A TaskDeck
-auth token is required before production. TaskDeck must validate
+This API is an MVP/dev surface scoped by `taskdeckInstanceId` and, when
+configured, the shared TaskDeck API bearer token. TaskDeck must validate
 `requestId`, `taskId`, and `sessionId` against local state before applying any
 result. TaskDeck must persist the mailbox item locally before ACK; `picked_up`
 is not final delivery confirmation. `acknowledged` is the only terminal success
@@ -271,6 +305,7 @@ In short:
 - Slack is notification only.
 - QR pairing creates a mobile browser session.
 - The mobile session can view and record decisions, but cannot command agents.
+- TaskDeck server APIs can require `DECISION_GATEWAY_TASKDECK_API_TOKEN`.
 - TaskDeck remains the local trust root and final application gate.
 - The mailbox is an outbox for TaskDeck, not an execution mechanism.
 - Supabase Auth is intentionally not used at this stage.

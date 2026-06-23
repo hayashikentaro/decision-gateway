@@ -5,8 +5,8 @@ to the requesting system.
 
 Decision Gateway currently records human actions and creates TaskDeck-addressed
 mailbox items for requests that include `taskdeckInstanceId`. TaskDeck polling,
-local application, retry hardening, and production authentication remain outside
-Decision Gateway's execution boundary.
+local application, retry hardening, and broader production hardening remain
+outside Decision Gateway's execution boundary.
 
 ## Shape
 
@@ -70,6 +70,8 @@ push into local TaskDeck, command agents, resume AI sessions, or apply decisions
 to local work.
 
 TaskDeck must persist a mailbox item locally before ACK, then validate
-`requestId`, `taskId`, and `sessionId` before applying a result. A production
-mailbox API also needs a TaskDeck auth token; the current MVP/dev API is scoped
-by `taskdeckInstanceId` only.
+`requestId`, `taskId`, and `sessionId` before applying a result. When
+`DECISION_GATEWAY_TASKDECK_API_TOKEN` is configured, TaskDeck mailbox polling
+and ACK requests must include `Authorization: Bearer <token>` from the local
+TaskDeck server. This token is not sent to mobile browsers, QR URLs, Slack
+messages, or Decision Workspace pages.

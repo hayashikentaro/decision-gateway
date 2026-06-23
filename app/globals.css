@@ -31,6 +31,7 @@ a {
 }
 
 button,
+input,
 textarea {
   font: inherit;
 }
@@ -236,6 +237,29 @@ textarea {
   padding: 10px;
   background: #ffffff;
   color: var(--ink);
+}
+
+input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px;
+  background: #ffffff;
+  color: var(--ink);
+}
+
+.pairing-form {
+  display: grid;
+  gap: 14px;
+  max-width: 520px;
+  margin-top: 22px;
+}
+
+.pairing-form label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-weight: 700;
 }
 
 .button-row {

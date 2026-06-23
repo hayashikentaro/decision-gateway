@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 
 import { getDecisionRequest } from "@/lib/decision-store";
+import { validateMobileSessionCookie } from "@/lib/mobile-session";
 
 import { DecisionActions } from "./DecisionActions";
 
@@ -35,12 +37,47 @@ function renderUnknownList(value: unknown, fallback: string) {
   return <p className="muted">{fallback}</p>;
 }
 
+function UnpairedBrowserPage() {
+  return (
+    <main className="page">
+      <div className="header">
+        <div>
+          <p className="eyebrow">Decision Workspace</p>
+          <h1>This browser is not paired.</h1>
+          <p className="lead">
+            Open a current QR pairing link from your trusted Decision Gateway
+            source, then return to the Decision Workspace link.
+          </p>
+        </div>
+        <Link href="/">Home</Link>
+      </div>
+
+      <section className="panel">
+        <h2>Pairing required</h2>
+        <p className="muted">
+          Decision details are only shown to a paired mobile browser. Slack
+          notifications are entry points and do not carry session secrets.
+        </p>
+      </section>
+    </main>
+  );
+}
+
 export default async function DecisionWorkspacePage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const headerStore = await headers();
+  const mobileSession = await validateMobileSessionCookie(
+    headerStore.get("cookie"),
+  );
+
+  if (!mobileSession) {
+    return <UnpairedBrowserPage />;
+  }
+
   const request = await getDecisionRequest(id);
 
   if (!request) {

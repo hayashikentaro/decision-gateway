@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { decisionActionSchema } from "@/lib/decision-types";
 import { recordDecisionAction } from "@/lib/decision-store";
+import { validateMobileSessionCookie } from "@/lib/mobile-session";
 
 function logUnexpectedError(error: unknown): void {
   const maybeErrno = error as NodeJS.ErrnoException;
@@ -18,6 +19,17 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
+    const mobileSession = await validateMobileSessionCookie(
+      request.headers.get("cookie"),
+    );
+
+    if (!mobileSession) {
+      return NextResponse.json(
+        { error: "This browser is not paired" },
+        { status: 401 },
+      );
+    }
+
     const body = await request.json().catch(() => null);
     const parsed = decisionActionSchema.safeParse(body);
 
@@ -31,7 +43,11 @@ export async function POST(
       );
     }
 
-    const updated = await recordDecisionAction(id, parsed.data);
+    const updated = await recordDecisionAction(
+      id,
+      parsed.data,
+      mobileSession.pairedDeviceId,
+    );
 
     if (!updated) {
       return NextResponse.json(

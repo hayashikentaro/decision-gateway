@@ -33,12 +33,16 @@ TaskDeck should not generate the Decision Workspace UI. Decision Gateway should 
 - Notify a human with a link to that workspace.
 - Record the human decision and supporting instruction.
 - Treat insufficient materials as a first-class decision outcome.
+- Persist decision requests, pairing state, mobile sessions, and decision
+  actions in Supabase/Postgres when configured.
+- Pair mobile browsers through QR links and Secure HttpOnly session cookies.
 
 Near-term plan: [Slack notification MVP](docs/plans/slack-notification-mvp.md).
 
 ## Local Development
 
-Decision Gateway currently has a minimal Next.js MVP with file-backed local persistence.
+Decision Gateway currently has a minimal Next.js MVP with Supabase-backed
+persistence and a file-backed local fallback.
 
 Use Node 20 and npm 10. This repository is pinned with Volta metadata:
 
@@ -66,11 +70,24 @@ Available variables:
 - `APP_BASE_URL`: Base URL used when generating Decision Workspace links. Defaults to the request origin when unset.
 - `DECISION_GATEWAY_STORE_PATH`: Optional exact file path for the temporary file-backed decision store.
 - `SLACK_WEBHOOK_URL`: Optional Slack incoming webhook. When set, Decision Gateway sends the minimal notification payload to Slack.
+- `SUPABASE_URL`: Supabase project URL. Required with `SUPABASE_SERVICE_ROLE_KEY` to enable Supabase persistence.
+- `SUPABASE_SERVICE_ROLE_KEY`: Supabase service-role key used only by the server. Required with `SUPABASE_URL`.
+- `MOBILE_SESSION_COOKIE_NAME`: Secure HttpOnly mobile browser session cookie name. Defaults to `dg_session`.
+- `PAIRING_TOKEN_TTL_MINUTES`: QR pairing token lifetime. Defaults to `30`.
+- `MOBILE_SESSION_TTL_DAYS`: Mobile browser session lifetime. Defaults to `90`.
 
-### Local Persistence
+### Persistence
 
-The file-backed decision store is for local development and MVP smoke testing
-only. Local development data is stored in:
+When both `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are present, Decision
+Gateway uses Supabase/Postgres for shared persistence. The schema is in:
+
+```text
+docs/database/supabase-schema.sql
+```
+
+When either Supabase variable is missing, Decision Gateway falls back to the
+file-backed store for local development and smoke testing. Local development
+data is stored in:
 
 ```text
 data/decision-requests.json
@@ -82,10 +99,47 @@ That file is ignored by Git because decision requests, materials, and decisions 
 /tmp/decision-gateway/decision-requests.json
 ```
 
-The Vercel `/tmp` store is writable but not durable and may disappear between
-invocations, deployments, or runtime instance changes. Supabase/Postgres is
-required before production use. The persistence layer lives behind
-`lib/decision-store.ts` so it can later be replaced by Supabase/Postgres.
+The Vercel `/tmp` fallback is writable but not durable and may disappear
+between invocations, deployments, or runtime instance changes. Configure
+Supabase before production use.
+
+### Supabase Setup
+
+1. Create a Supabase project.
+2. Open the Supabase SQL editor.
+3. Run the full contents of `docs/database/supabase-schema.sql`.
+4. Copy the project URL into `SUPABASE_URL`.
+5. Copy the service-role key into `SUPABASE_SERVICE_ROLE_KEY`.
+6. Set both variables in Vercel for the Decision Gateway project.
+7. Keep the service-role key server-side only. Do not expose it to browser
+   code.
+
+### Mobile Browser Pairing
+
+TaskDeck creates a pairing URL with:
+
+```bash
+curl -X POST http://localhost:3000/api/pairing-requests \
+  -H "content-type: application/json" \
+  -d '{
+    "taskdeckInstanceId": "tdi_local_dev",
+    "taskdeckLabel": "Kentaro MacBook TaskDeck"
+  }'
+```
+
+The response contains:
+
+```json
+{
+  "pairingId": "pair_...",
+  "pairingUrl": "http://localhost:3000/pair/pair_...#token=...",
+  "expiresAt": "2026-06-23T00:00:00.000Z"
+}
+```
+
+Open the `pairingUrl` in the mobile browser, enter a device label, and confirm
+pairing. The browser receives a Secure HttpOnly SameSite=Lax cookie. Decision
+Workspace links require that cookie before showing full decision details.
 
 ### Example Decision Request
 
@@ -95,6 +149,7 @@ curl -X POST http://localhost:3000/api/decision-requests \
   -d '{
     "source": {
       "type": "taskdeck",
+      "taskdeckInstanceId": "tdi_local_dev",
       "taskId": "task_123",
       "sessionId": "session_456",
       "label": "TaskDeck"
@@ -128,7 +183,19 @@ Expected response:
 }
 ```
 
-Open the returned `url` to review the Decision Workspace and record a decision.
+Open the returned `url` in a paired browser to review the Decision Workspace and
+record a decision.
+
+### Auth And Trust Model
+
+See [Decision Gateway Auth Model](docs/security/decision-gateway-auth-model.md).
+In short:
+
+- Slack is notification only.
+- QR pairing creates a mobile browser session.
+- The mobile session can view and record decisions, but cannot command agents.
+- TaskDeck remains the local trust root and the future final application gate.
+- Supabase Auth is intentionally not used at this stage.
 
 ### Checks
 
@@ -147,4 +214,6 @@ git diff --check
 - No approval-rate optimization.
 - No notification without a clear decision question.
 - No broad connector marketplace or orchestration runtime in this repository.
-- No cloud mailbox polling, agent resume, native push, Web Push, auth, multi-user/team support, or Supabase integration yet.
+- No TaskDeck polling, result application, AI resume, freeform remote command
+  execution, native push, Web Push, Supabase Auth, native mobile app, or
+  multi-user/team support yet.

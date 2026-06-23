@@ -49,16 +49,28 @@ export type DecisionActionInput = z.infer<typeof decisionActionSchema>;
 export type DecisionStatus = "pending" | "resolved";
 
 export type StoredDecisionAction = DecisionActionInput & {
+  id?: string;
+  pairedDeviceId?: string;
   decidedAt: string;
 };
 
 export type StoredDecisionRequest = DecisionRequestInput & {
   id: string;
   requestId: string;
+  taskdeckInstanceId?: string;
+  taskId?: string;
+  sessionId?: string;
   status: DecisionStatus;
   url: string;
   createdAt: string;
   updatedAt: string;
   decision?: StoredDecisionAction;
   rawPayload: DecisionRequestInput;
+};
+
+export type ValidatedMobileSession = {
+  id: string;
+  pairedDeviceId: string;
+  taskdeckInstanceId: string;
+  expiresAt: string;
 };

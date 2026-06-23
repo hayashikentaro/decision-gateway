@@ -1,12 +1,9 @@
-import Link from "next/link";
-
-import { listDecisionRequests } from "@/lib/decision-store";
-
 const sampleCurl = `curl -X POST http://localhost:3000/api/decision-requests \\
   -H "content-type: application/json" \\
   -d '{
     "source": {
       "type": "taskdeck",
+      "taskdeckInstanceId": "tdi_local_dev",
       "taskId": "task_123",
       "sessionId": "session_456",
       "label": "TaskDeck"
@@ -29,9 +26,7 @@ const sampleCurl = `curl -X POST http://localhost:3000/api/decision-requests \\
     }
   }'`;
 
-export default async function HomePage() {
-  const requests = await listDecisionRequests();
-
+export default function HomePage() {
   return (
     <main className="page">
       <section className="header">
@@ -72,25 +67,12 @@ export default async function HomePage() {
       </div>
 
       <section className="panel" style={{ marginTop: 18 }}>
-        <h2>Recent local decision requests</h2>
-        {requests.length === 0 ? (
-          <p className="muted">No local decision requests yet.</p>
-        ) : (
-          <div className="recent">
-            {requests.map((request) => (
-              <Link
-                className="recent-item"
-                href={`/decisions/${request.id}`}
-                key={request.id}
-              >
-                <strong>{request.decisionQuestion}</strong>
-                <p>
-                  {request.axis} · {request.urgency} · {request.status}
-                </p>
-              </Link>
-            ))}
-          </div>
-        )}
+        <h2>Workspace access</h2>
+        <p className="muted">
+          Decision Workspace links are returned by the request API and delivered
+          through notification connectors. Full workspace details require a
+          paired browser session.
+        </p>
       </section>
     </main>
   );

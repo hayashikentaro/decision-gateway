@@ -14,6 +14,7 @@ Before changing files, confirm the checkout and working tree:
 pwd
 git remote -v
 git status --short --branch
+git branch --show-current
 ```
 
 ## Required Context
@@ -43,6 +44,21 @@ TaskDeck is a separate product. It may be the first source connector, but Decisi
 - Preserve user changes already present in the working tree.
 - Update docs when changing public setup, protocol shape, product semantics, or user-facing workflow.
 - Keep notification payloads minimal; put judgment context in the Decision Workspace.
+
+## Commit And Push
+
+Remote GitHub branches are the durable source of truth. After an authorized
+repository change has been made, the task is complete only after the relevant
+changes are committed and pushed, unless the user explicitly says not to commit
+or push.
+
+When committing and pushing, push back to the same branch that was current at
+the start of the task. Preserve user changes already present in the working
+tree. If unrelated changes are present, do not overwrite them; report them
+before proceeding.
+
+When finished, report what changed, verification results, commit hash, push
+status, skipped checks, and unexpected files not touched.
 
 ## Verification
 

@@ -579,7 +579,7 @@ async function createDecisionResultMailboxItemInSupabase(
   return item;
 }
 
-async function listPendingMailboxItemsFromSupabase(
+async function listDeliverableMailboxItemsFromSupabase(
   taskdeckInstanceId: string,
   limit: number,
 ): Promise<StoredDecisionResultMailboxItem[]> {
@@ -587,7 +587,7 @@ async function listPendingMailboxItemsFromSupabase(
     .from("decision_result_mailbox")
     .select("*")
     .eq("taskdeck_instance_id", taskdeckInstanceId)
-    .eq("status", "pending")
+    .in("status", ["pending", "picked_up"])
     .order("created_at", { ascending: true })
     .limit(limit);
 
@@ -777,7 +777,7 @@ export async function createDecisionResultMailboxItem(
   }
 }
 
-export async function listPendingMailboxItems(
+export async function listDeliverableMailboxItems(
   taskdeckInstanceId: string,
   limit = 20,
 ): Promise<StoredDecisionResultMailboxItem[]> {
@@ -785,7 +785,7 @@ export async function listPendingMailboxItems(
     const safeLimit = normalizeLimit(limit, 20, 100);
 
     if (shouldUseSupabaseStore()) {
-      return await listPendingMailboxItemsFromSupabase(
+      return await listDeliverableMailboxItemsFromSupabase(
         taskdeckInstanceId,
         safeLimit,
       );
@@ -796,12 +796,12 @@ export async function listPendingMailboxItems(
       .filter(
         (item) =>
           item.taskdeckInstanceId === taskdeckInstanceId &&
-          item.status === "pending",
+          (item.status === "pending" || item.status === "picked_up"),
       )
       .sort((left, right) => left.createdAt.localeCompare(right.createdAt))
       .slice(0, safeLimit);
   } catch (error) {
-    logStoreFailure("listPendingMailboxItems", error);
+    logStoreFailure("listDeliverableMailboxItems", error);
     throw error;
   }
 }

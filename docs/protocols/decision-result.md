@@ -45,6 +45,19 @@ Decision Gateway's execution boundary.
   `pending`, `picked_up`, `acknowledged`, and `expired`.
 - `stale`: Whether the request or source state became stale before the decision was delivered.
 
+## Mailbox Delivery Semantics
+
+- `pending`: never delivered to TaskDeck.
+- `picked_up`: delivered at least once, but not yet acknowledged by TaskDeck.
+- `acknowledged`: TaskDeck has safely recorded the item. This is the only
+  terminal success state.
+- `expired`: no longer deliverable.
+
+Mailbox polling returns `pending` and `picked_up` items for the requested
+TaskDeck instance. Returned `pending` items are marked `picked_up` and receive
+`picked_up_at`. Already `picked_up` items are redelivered without changing
+`picked_up_at` until TaskDeck ACKs them.
+
 ## Stale Handling
 
 Decision Gateway should preserve stale-state evidence. A stale request may require re-confirmation, replacement by a newer request, or returning a stale result with explicit metadata.
@@ -56,6 +69,7 @@ human decision result and lets TaskDeck poll for it. Decision Gateway does not
 push into local TaskDeck, command agents, resume AI sessions, or apply decisions
 to local work.
 
-TaskDeck must validate `requestId`, `taskId`, and `sessionId` before applying a
-result. A production mailbox API also needs a TaskDeck auth token; the current
-MVP/dev API is scoped by `taskdeckInstanceId` only.
+TaskDeck must persist a mailbox item locally before ACK, then validate
+`requestId`, `taskId`, and `sessionId` before applying a result. A production
+mailbox API also needs a TaskDeck auth token; the current MVP/dev API is scoped
+by `taskdeckInstanceId` only.

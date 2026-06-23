@@ -16,6 +16,7 @@
     "build": "NODE_ENV=production next build",
     "start": "next start",
     "lint": "eslint .",
+    "smoke:mailbox": "node scripts/smoke-taskdeck-mailbox.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

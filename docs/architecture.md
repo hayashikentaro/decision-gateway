@@ -64,7 +64,8 @@ a request with `taskdeckInstanceId`.
 
 The mailbox is an outbox, not an execution mechanism. It should support target
 addressing, delivery mode, stale handling, and retry semantics without binding
-the protocol to TaskDeck.
+the protocol to TaskDeck. A picked-up mailbox item remains retrievable until
+the source acknowledges that it has safely recorded the result.
 
 ## TaskDeck Relationship
 

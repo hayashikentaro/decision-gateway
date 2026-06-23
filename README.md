@@ -205,8 +205,10 @@ TaskDeck polls outward:
 curl "http://localhost:3000/api/taskdeck/mailbox?taskdeckInstanceId=tdi_local_dev&limit=20"
 ```
 
-The response returns pending items for that TaskDeck instance and marks returned
-items `picked_up`:
+The response returns unacknowledged deliverable items for that TaskDeck instance.
+Items that are still `pending` are marked `picked_up` when returned. Items that
+are already `picked_up` may be redelivered with their original `pickedUpAt`
+until TaskDeck acknowledges them:
 
 ```json
 {
@@ -245,7 +247,8 @@ items `picked_up`:
 }
 ```
 
-A TaskDeck client can acknowledge a picked-up item:
+A TaskDeck client can acknowledge an item after it has persisted the payload
+locally:
 
 ```bash
 curl -X POST http://localhost:3000/api/taskdeck/mailbox/drm_.../ack \
@@ -256,7 +259,9 @@ curl -X POST http://localhost:3000/api/taskdeck/mailbox/drm_.../ack \
 This API is an MVP/dev surface scoped only by `taskdeckInstanceId`. A TaskDeck
 auth token is required before production. TaskDeck must validate
 `requestId`, `taskId`, and `sessionId` against local state before applying any
-result.
+result. TaskDeck must persist the mailbox item locally before ACK; `picked_up`
+is not final delivery confirmation. `acknowledged` is the only terminal success
+state.
 
 ### Auth And Trust Model
 
@@ -274,6 +279,7 @@ In short:
 
 ```bash
 npm run lint
+npm run smoke:mailbox
 npm run typecheck
 npm run build
 git diff --check

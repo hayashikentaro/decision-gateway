@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import {
-  listPendingMailboxItems,
+  listDeliverableMailboxItems,
   markMailboxItemPickedUp,
 } from "@/lib/decision-store";
 import type { StoredDecisionResultMailboxItem } from "@/lib/decision-types";
@@ -51,25 +51,30 @@ export async function GET(request: Request) {
 
     // TODO(security): Require a TaskDeck auth token before production. The
     // current taskdeckInstanceId scope is only suitable for MVP/dev polling.
-    const pendingItems = await listPendingMailboxItems(
+    const deliverableItems = await listDeliverableMailboxItems(
       parsed.data.taskdeckInstanceId,
       parsed.data.limit,
     );
-    const pickedUpItems: StoredDecisionResultMailboxItem[] = [];
+    const returnedItems: StoredDecisionResultMailboxItem[] = [];
 
-    for (const item of pendingItems) {
+    for (const item of deliverableItems) {
+      if (item.status === "picked_up") {
+        returnedItems.push(item);
+        continue;
+      }
+
       const pickedUp = await markMailboxItemPickedUp(
         item.id,
         parsed.data.taskdeckInstanceId,
       );
 
       if (pickedUp) {
-        pickedUpItems.push(pickedUp);
+        returnedItems.push(pickedUp);
       }
     }
 
     return NextResponse.json({
-      items: pickedUpItems.map(serializeMailboxItem),
+      items: returnedItems.map(serializeMailboxItem),
     });
   } catch (error) {
     logUnexpectedError(error);

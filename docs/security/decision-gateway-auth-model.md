@@ -78,8 +78,10 @@ teams, or native app authentication.
 
 The current TaskDeck mailbox API is an MVP/dev surface:
 
-- `GET /api/taskdeck/mailbox?taskdeckInstanceId=...` returns pending mailbox
-  items for that `taskdeckInstanceId` and marks returned items `picked_up`.
+- `GET /api/taskdeck/mailbox?taskdeckInstanceId=...` returns `pending` and
+  `picked_up` mailbox items for that `taskdeckInstanceId`. Returned `pending`
+  items are marked `picked_up`; already `picked_up` items keep their existing
+  `picked_up_at` and may be redelivered until ACK.
 - `POST /api/taskdeck/mailbox/<id>/ack` acknowledges one item only when the
   request body has the matching `taskdeckInstanceId`.
 
@@ -88,6 +90,8 @@ Before production, this API must require a TaskDeck auth token in addition to
 reads in development but is not sufficient authorization.
 
 TaskDeck must validate `requestId`, `taskId`, and `sessionId` against its local
-state before applying any result. A mailbox result is evidence of a human
-decision recorded by Decision Gateway; it is not permission for Decision Gateway
-to command a local agent directly.
+state before applying any result. It must persist a mailbox item locally before
+ACK. `picked_up` is not final delivery confirmation; `acknowledged` is the only
+terminal success state. A mailbox result is evidence of a human decision
+recorded by Decision Gateway; it is not permission for Decision Gateway to
+command a local agent directly.

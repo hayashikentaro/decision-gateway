@@ -68,6 +68,24 @@ create table if not exists public.decision_actions (
   decided_at timestamptz not null
 );
 
+create table if not exists public.decision_result_mailbox (
+  id text primary key,
+  taskdeck_instance_id text not null,
+  decision_request_id text not null references public.decision_requests(id) on delete cascade,
+  decision_action_id text not null references public.decision_actions(id) on delete cascade,
+  request_id text not null,
+  task_id text,
+  session_id text,
+  status text not null default 'pending',
+  payload jsonb not null,
+  created_at timestamptz not null default now(),
+  picked_up_at timestamptz,
+  acknowledged_at timestamptz,
+  expires_at timestamptz,
+  constraint decision_result_mailbox_status_check
+    check (status in ('pending', 'picked_up', 'acknowledged', 'expired'))
+);
+
 create index if not exists pairing_tokens_taskdeck_instance_id_idx
   on public.pairing_tokens(taskdeck_instance_id);
 
@@ -89,9 +107,19 @@ create index if not exists decision_requests_taskdeck_instance_id_idx
 create index if not exists decision_actions_decision_request_id_idx
   on public.decision_actions(decision_request_id);
 
+create index if not exists decision_result_mailbox_taskdeck_status_created_idx
+  on public.decision_result_mailbox(taskdeck_instance_id, status, created_at);
+
+create index if not exists decision_result_mailbox_decision_request_id_idx
+  on public.decision_result_mailbox(decision_request_id);
+
+create index if not exists decision_result_mailbox_decision_action_id_idx
+  on public.decision_result_mailbox(decision_action_id);
+
 alter table public.taskdeck_instances enable row level security;
 alter table public.pairing_tokens enable row level security;
 alter table public.paired_devices enable row level security;
 alter table public.mobile_sessions enable row level security;
 alter table public.decision_requests enable row level security;
 alter table public.decision_actions enable row level security;
+alter table public.decision_result_mailbox enable row level security;

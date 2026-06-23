@@ -5,9 +5,13 @@ import path from "node:path";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import type {
+  CreateDecisionResultMailboxItemInput,
   DecisionActionInput,
+  DecisionResultMailboxPayload,
+  DecisionResultMailboxStatus,
   DecisionRequestInput,
   StoredDecisionAction,
+  StoredDecisionResultMailboxItem,
   StoredDecisionRequest,
   ValidatedMobileSession,
 } from "./decision-types";
@@ -54,6 +58,7 @@ type MobileSessionRecord = {
 
 type StoreFile = {
   requests: StoredDecisionRequest[];
+  decisionResultMailbox?: StoredDecisionResultMailboxItem[];
   taskdeckInstances?: TaskdeckInstanceRecord[];
   pairingTokens?: PairingTokenRecord[];
   pairedDevices?: PairedDeviceRecord[];
@@ -111,6 +116,22 @@ type SupabaseDecisionActionRow = {
   condition: string | null;
   reason: string | null;
   decided_at: string;
+};
+
+type SupabaseDecisionResultMailboxRow = {
+  id: string;
+  taskdeck_instance_id: string;
+  decision_request_id: string;
+  decision_action_id: string;
+  request_id: string;
+  task_id: string | null;
+  session_id: string | null;
+  status: DecisionResultMailboxStatus;
+  payload: unknown;
+  created_at: string;
+  picked_up_at: string | null;
+  acknowledged_at: string | null;
+  expires_at: string | null;
 };
 
 type SupabasePairingTokenRow = {
@@ -202,6 +223,9 @@ function logStoreFailure(operation: string, error: unknown): void {
 function normalizeStore(store: StoreFile): StoreFile {
   return {
     requests: Array.isArray(store.requests) ? store.requests : [],
+    decisionResultMailbox: Array.isArray(store.decisionResultMailbox)
+      ? store.decisionResultMailbox
+      : [],
     taskdeckInstances: Array.isArray(store.taskdeckInstances)
       ? store.taskdeckInstances
       : [],
@@ -262,6 +286,12 @@ function getPositiveIntegerEnv(name: string, fallback: number): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+function normalizeLimit(limit: number, fallback: number, max: number): number {
+  return Number.isFinite(limit) && limit > 0
+    ? Math.min(Math.floor(limit), max)
+    : fallback;
+}
+
 function generateSecret(): string {
   return randomBytes(32).toString("base64url");
 }
@@ -316,6 +346,26 @@ function mapActionRow(row: SupabaseDecisionActionRow): StoredDecisionAction {
   };
 }
 
+function mapMailboxRow(
+  row: SupabaseDecisionResultMailboxRow,
+): StoredDecisionResultMailboxItem {
+  return {
+    id: row.id,
+    taskdeckInstanceId: row.taskdeck_instance_id,
+    decisionRequestId: row.decision_request_id,
+    decisionActionId: row.decision_action_id,
+    requestId: row.request_id,
+    taskId: row.task_id ?? undefined,
+    sessionId: row.session_id ?? undefined,
+    status: row.status,
+    payload: row.payload as DecisionResultMailboxPayload,
+    createdAt: row.created_at,
+    pickedUpAt: row.picked_up_at ?? undefined,
+    acknowledgedAt: row.acknowledged_at ?? undefined,
+    expiresAt: row.expires_at ?? undefined,
+  };
+}
+
 function mapRequestRow(
   row: SupabaseDecisionRequestRow,
   action?: SupabaseDecisionActionRow | null,
@@ -345,6 +395,53 @@ function mapRequestRow(
     updatedAt: row.updated_at,
     decision: action ? mapActionRow(action) : undefined,
     rawPayload,
+  };
+}
+
+function buildDecisionResultPayload(
+  request: StoredDecisionRequest,
+  action: StoredDecisionAction,
+): DecisionResultMailboxPayload {
+  if (!action.id) {
+    throw new Error("Decision action id is required to create mailbox payload");
+  }
+
+  return {
+    type: "decision_result",
+    decisionRequestId: request.id,
+    decisionActionId: action.id,
+    requestId: request.requestId,
+    taskId: request.taskId ?? null,
+    sessionId: request.sessionId ?? null,
+    action: {
+      type: action.type,
+      condition: action.condition ?? null,
+      reason: action.reason ?? null,
+      decidedAt: action.decidedAt,
+    },
+    source: request.source,
+    goal: request.goal,
+    axis: request.axis,
+    urgency: request.urgency,
+  };
+}
+
+function buildDecisionResultMailboxItem(
+  input: CreateDecisionResultMailboxItemInput,
+  nowIso = new Date().toISOString(),
+): StoredDecisionResultMailboxItem {
+  return {
+    id: `drm_${randomUUID()}`,
+    taskdeckInstanceId: input.taskdeckInstanceId,
+    decisionRequestId: input.decisionRequestId,
+    decisionActionId: input.decisionActionId,
+    requestId: input.requestId,
+    taskId: input.taskId,
+    sessionId: input.sessionId,
+    status: "pending",
+    payload: input.payload,
+    createdAt: nowIso,
+    expiresAt: input.expiresAt,
   };
 }
 
@@ -452,6 +549,100 @@ async function listDecisionRequestsFromSupabase(
   return (data as SupabaseDecisionRequestRow[]).map((row) => mapRequestRow(row));
 }
 
+async function createDecisionResultMailboxItemInSupabase(
+  input: CreateDecisionResultMailboxItemInput,
+): Promise<StoredDecisionResultMailboxItem> {
+  const item = buildDecisionResultMailboxItem(input);
+
+  const { error } = await getSupabaseClient()
+    .from("decision_result_mailbox")
+    .insert({
+      id: item.id,
+      taskdeck_instance_id: item.taskdeckInstanceId,
+      decision_request_id: item.decisionRequestId,
+      decision_action_id: item.decisionActionId,
+      request_id: item.requestId,
+      task_id: item.taskId ?? null,
+      session_id: item.sessionId ?? null,
+      status: item.status,
+      payload: item.payload,
+      created_at: item.createdAt,
+      picked_up_at: null,
+      acknowledged_at: null,
+      expires_at: item.expiresAt ?? null,
+    });
+
+  if (error) {
+    throw error;
+  }
+
+  return item;
+}
+
+async function listPendingMailboxItemsFromSupabase(
+  taskdeckInstanceId: string,
+  limit: number,
+): Promise<StoredDecisionResultMailboxItem[]> {
+  const { data, error } = await getSupabaseClient()
+    .from("decision_result_mailbox")
+    .select("*")
+    .eq("taskdeck_instance_id", taskdeckInstanceId)
+    .eq("status", "pending")
+    .order("created_at", { ascending: true })
+    .limit(limit);
+
+  if (error) {
+    throw error;
+  }
+
+  return (data as SupabaseDecisionResultMailboxRow[]).map(mapMailboxRow);
+}
+
+async function markMailboxItemPickedUpInSupabase(
+  id: string,
+  taskdeckInstanceId: string,
+): Promise<StoredDecisionResultMailboxItem | null> {
+  const { data, error } = await getSupabaseClient()
+    .from("decision_result_mailbox")
+    .update({
+      status: "picked_up",
+      picked_up_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("taskdeck_instance_id", taskdeckInstanceId)
+    .eq("status", "pending")
+    .select("*")
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data ? mapMailboxRow(data as SupabaseDecisionResultMailboxRow) : null;
+}
+
+async function acknowledgeMailboxItemInSupabase(
+  id: string,
+  taskdeckInstanceId: string,
+): Promise<StoredDecisionResultMailboxItem | null> {
+  const { data, error } = await getSupabaseClient()
+    .from("decision_result_mailbox")
+    .update({
+      status: "acknowledged",
+      acknowledged_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("taskdeck_instance_id", taskdeckInstanceId)
+    .select("*")
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data ? mapMailboxRow(data as SupabaseDecisionResultMailboxRow) : null;
+}
+
 async function recordDecisionActionInSupabase(
   id: string,
   action: DecisionActionInput,
@@ -464,10 +655,18 @@ async function recordDecisionActionInSupabase(
   }
 
   const now = new Date().toISOString();
+  const actionId = `dact_${randomUUID()}`;
+  const storedAction: StoredDecisionAction = {
+    id: actionId,
+    ...action,
+    pairedDeviceId,
+    decidedAt: now,
+  };
+
   const { error: insertError } = await getSupabaseClient()
     .from("decision_actions")
     .insert({
-      id: `dact_${randomUUID()}`,
+      id: actionId,
       decision_request_id: id,
       paired_device_id: pairedDeviceId ?? null,
       type: action.type,
@@ -490,6 +689,18 @@ async function recordDecisionActionInSupabase(
 
   if (updateError) {
     throw updateError;
+  }
+
+  if (existing.taskdeckInstanceId) {
+    await createDecisionResultMailboxItemInSupabase({
+      taskdeckInstanceId: existing.taskdeckInstanceId,
+      decisionRequestId: existing.id,
+      decisionActionId: actionId,
+      requestId: existing.requestId,
+      taskId: existing.taskId,
+      sessionId: existing.sessionId,
+      payload: buildDecisionResultPayload(existing, storedAction),
+    });
   }
 
   return getDecisionRequestFromSupabase(id);
@@ -547,6 +758,114 @@ export async function listDecisionRequests(
   }
 }
 
+export async function createDecisionResultMailboxItem(
+  input: CreateDecisionResultMailboxItemInput,
+): Promise<StoredDecisionResultMailboxItem> {
+  try {
+    if (shouldUseSupabaseStore()) {
+      return await createDecisionResultMailboxItemInSupabase(input);
+    }
+
+    const item = buildDecisionResultMailboxItem(input);
+    const store = await readStore();
+    store.decisionResultMailbox.unshift(item);
+    await writeStore(store);
+    return item;
+  } catch (error) {
+    logStoreFailure("createDecisionResultMailboxItem", error);
+    throw error;
+  }
+}
+
+export async function listPendingMailboxItems(
+  taskdeckInstanceId: string,
+  limit = 20,
+): Promise<StoredDecisionResultMailboxItem[]> {
+  try {
+    const safeLimit = normalizeLimit(limit, 20, 100);
+
+    if (shouldUseSupabaseStore()) {
+      return await listPendingMailboxItemsFromSupabase(
+        taskdeckInstanceId,
+        safeLimit,
+      );
+    }
+
+    const store = await readStore();
+    return store.decisionResultMailbox
+      .filter(
+        (item) =>
+          item.taskdeckInstanceId === taskdeckInstanceId &&
+          item.status === "pending",
+      )
+      .sort((left, right) => left.createdAt.localeCompare(right.createdAt))
+      .slice(0, safeLimit);
+  } catch (error) {
+    logStoreFailure("listPendingMailboxItems", error);
+    throw error;
+  }
+}
+
+export async function markMailboxItemPickedUp(
+  id: string,
+  taskdeckInstanceId: string,
+): Promise<StoredDecisionResultMailboxItem | null> {
+  try {
+    if (shouldUseSupabaseStore()) {
+      return await markMailboxItemPickedUpInSupabase(id, taskdeckInstanceId);
+    }
+
+    const store = await readStore();
+    const item = store.decisionResultMailbox.find(
+      (candidate) =>
+        candidate.id === id &&
+        candidate.taskdeckInstanceId === taskdeckInstanceId &&
+        candidate.status === "pending",
+    );
+
+    if (!item) {
+      return null;
+    }
+
+    item.status = "picked_up";
+    item.pickedUpAt = new Date().toISOString();
+    await writeStore(store);
+    return item;
+  } catch (error) {
+    logStoreFailure("markMailboxItemPickedUp", error);
+    throw error;
+  }
+}
+
+export async function acknowledgeMailboxItem(
+  id: string,
+  taskdeckInstanceId: string,
+): Promise<StoredDecisionResultMailboxItem | null> {
+  try {
+    if (shouldUseSupabaseStore()) {
+      return await acknowledgeMailboxItemInSupabase(id, taskdeckInstanceId);
+    }
+
+    const store = await readStore();
+    const item = store.decisionResultMailbox.find(
+      (candidate) =>
+        candidate.id === id && candidate.taskdeckInstanceId === taskdeckInstanceId,
+    );
+
+    if (!item) {
+      return null;
+    }
+
+    item.status = "acknowledged";
+    item.acknowledgedAt = new Date().toISOString();
+    await writeStore(store);
+    return item;
+  } catch (error) {
+    logStoreFailure("acknowledgeMailboxItem", error);
+    throw error;
+  }
+}
+
 export async function recordDecisionAction(
   id: string,
   action: DecisionActionInput,
@@ -565,11 +884,13 @@ export async function recordDecisionAction(
     }
 
     const now = new Date().toISOString();
+    const actionId = `dact_${randomUUID()}`;
     const updated: StoredDecisionRequest = {
       ...store.requests[index],
       status: "resolved",
       updatedAt: now,
       decision: {
+        id: actionId,
         ...action,
         pairedDeviceId,
         decidedAt: now,
@@ -577,6 +898,24 @@ export async function recordDecisionAction(
     };
 
     store.requests[index] = updated;
+
+    if (updated.taskdeckInstanceId && updated.decision?.id) {
+      store.decisionResultMailbox.unshift(
+        buildDecisionResultMailboxItem(
+          {
+            taskdeckInstanceId: updated.taskdeckInstanceId,
+            decisionRequestId: updated.id,
+            decisionActionId: updated.decision.id,
+            requestId: updated.requestId,
+            taskId: updated.taskId,
+            sessionId: updated.sessionId,
+            payload: buildDecisionResultPayload(updated, updated.decision),
+          },
+          now,
+        ),
+      );
+    }
+
     await writeStore(store);
     return updated;
   } catch (error) {

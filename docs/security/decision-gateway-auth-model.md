@@ -11,8 +11,10 @@ pairing state, mobile browser sessions, and recorded decision actions.
   sessions.
 - Decision Gateway records decision results. It does not directly command AI
   agents and does not run freeform remote commands.
-- TaskDeck will later poll or fetch decision results and decide whether to apply
-  them to local AI sessions.
+- TaskDeck polls outward for decision result mailbox items and decides whether
+  to apply them to local AI sessions.
+- Decision Gateway does not push inward to local TaskDeck and does not expose a
+  resume, apply, command, or agent-control API.
 
 ## Mobile Browser Pairing
 
@@ -46,7 +48,13 @@ Supabase/Postgres stores:
 - paired mobile device records;
 - hashed mobile browser sessions;
 - decision requests and raw request payloads;
-- decision action records.
+- decision action records;
+- decision result mailbox items addressed to TaskDeck instances.
+
+`decision_actions` are the audit/history record of what the human chose.
+`decision_result_mailbox` is delivery state for TaskDeck polling. A mailbox item
+copies the recorded decision result into an outbox addressed by
+`taskdeck_instance_id`; it is not an instruction executor.
 
 The schema lives at:
 
@@ -65,3 +73,21 @@ browser identity is a paired mobile browser session represented by the
 Decision Gateway cookie. This keeps the MVP focused on TaskDeck-originated
 pairing and decision recording without introducing multi-user accounts,
 teams, or native app authentication.
+
+## TaskDeck Mailbox API
+
+The current TaskDeck mailbox API is an MVP/dev surface:
+
+- `GET /api/taskdeck/mailbox?taskdeckInstanceId=...` returns pending mailbox
+  items for that `taskdeckInstanceId` and marks returned items `picked_up`.
+- `POST /api/taskdeck/mailbox/<id>/ack` acknowledges one item only when the
+  request body has the matching `taskdeckInstanceId`.
+
+Before production, this API must require a TaskDeck auth token in addition to
+`taskdeckInstanceId` scoping. The current scope prevents accidental cross-instance
+reads in development but is not sufficient authorization.
+
+TaskDeck must validate `requestId`, `taskId`, and `sessionId` against its local
+state before applying any result. A mailbox result is evidence of a human
+decision recorded by Decision Gateway; it is not permission for Decision Gateway
+to command a local agent directly.

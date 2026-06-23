@@ -47,6 +47,11 @@ export type DecisionRequestInput = z.infer<typeof decisionRequestInputSchema>;
 export type DecisionActionInput = z.infer<typeof decisionActionSchema>;
 
 export type DecisionStatus = "pending" | "resolved";
+export type DecisionResultMailboxStatus =
+  | "pending"
+  | "picked_up"
+  | "acknowledged"
+  | "expired";
 
 export type StoredDecisionAction = DecisionActionInput & {
   id?: string;
@@ -66,6 +71,52 @@ export type StoredDecisionRequest = DecisionRequestInput & {
   updatedAt: string;
   decision?: StoredDecisionAction;
   rawPayload: DecisionRequestInput;
+};
+
+export type DecisionResultMailboxPayload = {
+  type: "decision_result";
+  decisionRequestId: string;
+  decisionActionId: string;
+  requestId: string;
+  taskId: string | null;
+  sessionId: string | null;
+  action: {
+    type: DecisionActionInput["type"];
+    condition: string | null;
+    reason: string | null;
+    decidedAt: string;
+  };
+  source: DecisionRequestInput["source"];
+  goal: string;
+  axis: string;
+  urgency: string;
+};
+
+export type StoredDecisionResultMailboxItem = {
+  id: string;
+  taskdeckInstanceId: string;
+  decisionRequestId: string;
+  decisionActionId: string;
+  requestId: string;
+  taskId?: string;
+  sessionId?: string;
+  status: DecisionResultMailboxStatus;
+  payload: DecisionResultMailboxPayload;
+  createdAt: string;
+  pickedUpAt?: string;
+  acknowledgedAt?: string;
+  expiresAt?: string;
+};
+
+export type CreateDecisionResultMailboxItemInput = {
+  taskdeckInstanceId: string;
+  decisionRequestId: string;
+  decisionActionId: string;
+  requestId: string;
+  taskId?: string;
+  sessionId?: string;
+  payload: DecisionResultMailboxPayload;
+  expiresAt?: string;
 };
 
 export type ValidatedMobileSession = {

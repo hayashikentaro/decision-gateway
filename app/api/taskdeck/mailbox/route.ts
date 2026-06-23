@@ -1,0 +1,81 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+
+import {
+  listPendingMailboxItems,
+  markMailboxItemPickedUp,
+} from "@/lib/decision-store";
+import type { StoredDecisionResultMailboxItem } from "@/lib/decision-types";
+
+const mailboxQuerySchema = z.object({
+  taskdeckInstanceId: z.string().min(1),
+  limit: z.coerce.number().int().positive().max(100).default(20),
+});
+
+function serializeMailboxItem(item: StoredDecisionResultMailboxItem) {
+  return {
+    id: item.id,
+    status: item.status,
+    payload: item.payload,
+    createdAt: item.createdAt,
+    pickedUpAt: item.pickedUpAt ?? null,
+  };
+}
+
+function logUnexpectedError(error: unknown): void {
+  const maybeErrno = error as NodeJS.ErrnoException;
+
+  console.error("[decision-gateway] unexpected TaskDeck mailbox API error", {
+    code: typeof maybeErrno.code === "string" ? maybeErrno.code : "UNKNOWN",
+    message: error instanceof Error ? error.message : String(error),
+  });
+}
+
+export async function GET(request: Request) {
+  try {
+    const url = new URL(request.url);
+    const parsed = mailboxQuerySchema.safeParse({
+      taskdeckInstanceId: url.searchParams.get("taskdeckInstanceId") ?? undefined,
+      limit: url.searchParams.get("limit") ?? undefined,
+    });
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          error: "Invalid mailbox query",
+          issues: parsed.error.flatten(),
+        },
+        { status: 400 },
+      );
+    }
+
+    // TODO(security): Require a TaskDeck auth token before production. The
+    // current taskdeckInstanceId scope is only suitable for MVP/dev polling.
+    const pendingItems = await listPendingMailboxItems(
+      parsed.data.taskdeckInstanceId,
+      parsed.data.limit,
+    );
+    const pickedUpItems: StoredDecisionResultMailboxItem[] = [];
+
+    for (const item of pendingItems) {
+      const pickedUp = await markMailboxItemPickedUp(
+        item.id,
+        parsed.data.taskdeckInstanceId,
+      );
+
+      if (pickedUp) {
+        pickedUpItems.push(pickedUp);
+      }
+    }
+
+    return NextResponse.json({
+      items: pickedUpItems.map(serializeMailboxItem),
+    });
+  } catch (error) {
+    logUnexpectedError(error);
+    return NextResponse.json(
+      { error: "Unexpected server error" },
+      { status: 500 },
+    );
+  }
+}

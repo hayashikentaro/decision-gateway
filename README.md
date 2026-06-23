@@ -1,6 +1,6 @@
 # Decision Gateway
 
-Decision Gateway is a human judgment service for agentic systems. It receives structured decision requests, creates a Decision Workspace for the human, notifies the human with a link, records the decision, and later returns the result through a protocol.
+Decision Gateway is a human judgment service for agentic systems. It receives structured decision requests, creates a Decision Workspace for the human, notifies the human with a link, records the decision, and exposes decision result delivery state through a protocol.
 
 The product exists because a notification is not a decision surface. The notification should get the right human into the right workspace; the workspace should carry the context, tradeoffs, materials, and response controls needed to make a defensible decision.
 
@@ -8,7 +8,9 @@ The product exists because a notification is not a decision surface. The notific
 
 - A gateway between automated systems and human judgment.
 - A Decision Workspace for reviewing a request, materials, recommendation, and possible outcomes.
-- A protocol boundary for decision requests and future decision results.
+- A protocol boundary for decision requests and decision results.
+- A TaskDeck-addressed result mailbox that source systems can poll without
+  exposing local servers.
 - A place to preserve decision context, stale-state handling, and insufficient-materials outcomes.
 
 ## What It Is Not
@@ -21,9 +23,9 @@ The product exists because a notification is not a decision surface. The notific
 
 ## Relationship With TaskDeck
 
-TaskDeck may be the first source connector that emits decision requests into Decision Gateway. TaskDeck remains responsible for connector/source/orchestration hosting. Decision Gateway owns the human judgment UX, Decision Workspace, decision recording, and future result-return protocol.
+TaskDeck may be the first source connector that emits decision requests into Decision Gateway. TaskDeck remains responsible for connector/source/orchestration hosting. Decision Gateway owns the human judgment UX, Decision Workspace, decision recording, and result mailbox delivery state.
 
-TaskDeck should not generate the Decision Workspace UI. Decision Gateway should not directly expose the TaskDeck server or depend on TaskDeck internals.
+TaskDeck should not generate the Decision Workspace UI. Decision Gateway should not directly expose the TaskDeck server or depend on TaskDeck internals. TaskDeck polls outward for mailbox items and must decide locally whether a result applies to a task or AI session.
 
 ## MVP Scope
 
@@ -35,6 +37,10 @@ TaskDeck should not generate the Decision Workspace UI. Decision Gateway should 
 - Treat insufficient materials as a first-class decision outcome.
 - Persist decision requests, pairing state, mobile sessions, and decision
   actions in Supabase/Postgres when configured.
+- Create TaskDeck-addressed `decision_result_mailbox` items when a decision
+  action is recorded for a request with `taskdeckInstanceId`.
+- Expose MVP/dev TaskDeck mailbox polling and acknowledgment endpoints scoped
+  by `taskdeckInstanceId`.
 - Pair mobile browsers through QR links and Secure HttpOnly session cookies.
 
 Near-term plan: [Slack notification MVP](docs/plans/slack-notification-mvp.md).
@@ -93,7 +99,7 @@ data is stored in:
 data/decision-requests.json
 ```
 
-That file is ignored by Git because decision requests, materials, and decisions may contain sensitive context. In Vercel or production runtime, the temporary smoke-test store uses:
+That file is ignored by Git because decision requests, materials, decisions, and mailbox payloads may contain sensitive context. In Vercel or production runtime, the temporary smoke-test store uses:
 
 ```text
 /tmp/decision-gateway/decision-requests.json
@@ -186,6 +192,72 @@ Expected response:
 Open the returned `url` in a paired browser to review the Decision Workspace and
 record a decision.
 
+### TaskDeck Result Mailbox
+
+When a decision action is recorded for a request that has `taskdeckInstanceId`,
+Decision Gateway creates a `decision_result_mailbox` item addressed to that
+TaskDeck instance. The original `decision_actions` row remains the audit/history
+record. The mailbox row is delivery state for TaskDeck.
+
+TaskDeck polls outward:
+
+```bash
+curl "http://localhost:3000/api/taskdeck/mailbox?taskdeckInstanceId=tdi_local_dev&limit=20"
+```
+
+The response returns pending items for that TaskDeck instance and marks returned
+items `picked_up`:
+
+```json
+{
+  "items": [
+    {
+      "id": "drm_...",
+      "status": "picked_up",
+      "payload": {
+        "type": "decision_result",
+        "decisionRequestId": "dec_...",
+        "decisionActionId": "dact_...",
+        "requestId": "req_...",
+        "taskId": "task_123",
+        "sessionId": "session_456",
+        "action": {
+          "type": "accept",
+          "condition": null,
+          "reason": null,
+          "decidedAt": "2026-06-23T00:00:00.000Z"
+        },
+        "source": {
+          "type": "taskdeck",
+          "taskdeckInstanceId": "tdi_local_dev",
+          "taskId": "task_123",
+          "sessionId": "session_456",
+          "label": "TaskDeck"
+        },
+        "goal": "Keep the task metadata model extensible without forcing every source to provide the same fields.",
+        "axis": "data_model",
+        "urgency": "blocking"
+      },
+      "createdAt": "2026-06-23T00:00:00.000Z",
+      "pickedUpAt": "2026-06-23T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+A TaskDeck client can acknowledge a picked-up item:
+
+```bash
+curl -X POST http://localhost:3000/api/taskdeck/mailbox/drm_.../ack \
+  -H "content-type: application/json" \
+  -d '{"taskdeckInstanceId":"tdi_local_dev"}'
+```
+
+This API is an MVP/dev surface scoped only by `taskdeckInstanceId`. A TaskDeck
+auth token is required before production. TaskDeck must validate
+`requestId`, `taskId`, and `sessionId` against local state before applying any
+result.
+
 ### Auth And Trust Model
 
 See [Decision Gateway Auth Model](docs/security/decision-gateway-auth-model.md).
@@ -194,7 +266,8 @@ In short:
 - Slack is notification only.
 - QR pairing creates a mobile browser session.
 - The mobile session can view and record decisions, but cannot command agents.
-- TaskDeck remains the local trust root and the future final application gate.
+- TaskDeck remains the local trust root and final application gate.
+- The mailbox is an outbox for TaskDeck, not an execution mechanism.
 - Supabase Auth is intentionally not used at this stage.
 
 ### Checks
@@ -208,12 +281,11 @@ git diff --check
 
 ## Current Non-Goals
 
-- No return delivery to source systems in the MVP.
 - No direct TaskDeck server exposure.
 - No TaskDeck-specific request protocol.
 - No approval-rate optimization.
 - No notification without a clear decision question.
 - No broad connector marketplace or orchestration runtime in this repository.
-- No TaskDeck polling, result application, AI resume, freeform remote command
-  execution, native push, Web Push, Supabase Auth, native mobile app, or
-  multi-user/team support yet.
+- No TaskDeck-side polling worker, result application, AI resume, freeform
+  remote command execution, native push, Web Push, Supabase Auth, native mobile
+  app, or multi-user/team support yet.

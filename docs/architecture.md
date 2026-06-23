@@ -18,7 +18,7 @@ Source system
   -> Notification connector
   -> Human opens workspace and decides
   -> Decision Result record
-  -> Future return path
+  -> Result mailbox delivery state
 ```
 
 ## Components
@@ -52,17 +52,26 @@ The connector should avoid spam by requiring a clear decision question, respecti
 
 ### Decision Result
 
-Decision Gateway records the human decision and any agent instruction. Result delivery back to the source system is a future protocol capability, not an MVP requirement.
+Decision Gateway records the human decision and any agent instruction. These
+records are audit/history and remain separate from delivery state.
 
-### Cloud Mailbox Future Return Path
+### Cloud Mailbox Return Path
 
-A future return path may use a cloud mailbox or similar durable delivery mechanism so source systems can retrieve decision results without direct server exposure.
+Decision Gateway can create a cloud mailbox item so source systems can retrieve
+decision results without direct local server exposure. The current implementation
+creates TaskDeck-addressed mailbox items when a decision action is recorded for
+a request with `taskdeckInstanceId`.
 
-This should support target addressing, delivery mode, stale handling, and retry semantics without binding the protocol to TaskDeck.
+The mailbox is an outbox, not an execution mechanism. It should support target
+addressing, delivery mode, stale handling, and retry semantics without binding
+the protocol to TaskDeck.
 
 ## TaskDeck Relationship
 
-TaskDeck is a connector/source/orchestration host. It can emit decision requests when agent work needs human judgment. Decision Gateway then owns notification, workspace, decision capture, and future result delivery.
+TaskDeck is a connector/source/orchestration host. It can emit decision requests
+when agent work needs human judgment. Decision Gateway then owns notification,
+workspace, decision capture, and result mailbox delivery state. TaskDeck polls
+outward and remains responsible for validating and applying any result locally.
 
 ## Non-Goals
 

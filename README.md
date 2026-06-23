@@ -75,7 +75,7 @@ Available variables:
 
 - `APP_BASE_URL`: Base URL used when generating Decision Workspace links. Defaults to the request origin when unset.
 - `DECISION_GATEWAY_STORE_PATH`: Optional exact file path for the temporary file-backed decision store.
-- `DECISION_GATEWAY_TASKDECK_API_TOKEN`: Optional shared server-side bearer token for TaskDeck-facing APIs. If set, local TaskDeck must send `Authorization: Bearer <token>`.
+- `DECISION_GATEWAY_TASKDECK_API_TOKEN`: Shared server-side bearer token for TaskDeck-facing APIs. Optional only for local development; required in deployed/production runtime.
 - `SLACK_WEBHOOK_URL`: Optional Slack incoming webhook. When set, Decision Gateway sends the minimal notification payload to Slack.
 - `SUPABASE_URL`: Supabase project URL. Required with `SUPABASE_SERVICE_ROLE_KEY` to enable Supabase persistence.
 - `SUPABASE_SERVICE_ROLE_KEY`: Supabase service-role key used only by the server. Required with `SUPABASE_URL`.
@@ -87,8 +87,10 @@ Available variables:
 
 TaskDeck-facing APIs are called by the local TaskDeck server. When
 `DECISION_GATEWAY_TASKDECK_API_TOKEN` is unset, those APIs keep their current
-local development behavior and do not require an `Authorization` header. When
-the variable is set, Decision Gateway requires this exact header on:
+local development behavior and do not require an `Authorization` header. In a
+deployed/production runtime (`VERCEL` or `NODE_ENV=production`), leaving the
+token unset fails closed with `401 Unauthorized`. When the variable is set,
+Decision Gateway requires this exact header on:
 
 - `POST /api/decision-requests`
 - `POST /api/pairing-requests`
@@ -305,7 +307,8 @@ In short:
 - Slack is notification only.
 - QR pairing creates a mobile browser session.
 - The mobile session can view and record decisions, but cannot command agents.
-- TaskDeck server APIs can require `DECISION_GATEWAY_TASKDECK_API_TOKEN`.
+- TaskDeck server APIs require `DECISION_GATEWAY_TASKDECK_API_TOKEN` outside
+  local development.
 - TaskDeck remains the local trust root and final application gate.
 - The mailbox is an outbox for TaskDeck, not an execution mechanism.
 - Supabase Auth is intentionally not used at this stage.

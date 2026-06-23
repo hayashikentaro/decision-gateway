@@ -147,12 +147,28 @@ function taskdeckAuthHeaders(apiToken) {
   return apiToken ? { authorization: `Bearer ${apiToken}` } : {};
 }
 
-async function withServer(apiToken, callback) {
+async function withServer(apiToken, callback, options = {}) {
   const port = await getAvailablePort();
   const baseUrl = `http://127.0.0.1:${port}`;
   const tempDir = await mkdtemp(path.join(tmpdir(), "decision-gateway-mailbox-"));
   const storePath = path.join(tempDir, "decision-requests.json");
   let output = "";
+  const env = {
+    ...process.env,
+    APP_BASE_URL: baseUrl,
+    DECISION_GATEWAY_STORE_PATH: storePath,
+    DECISION_GATEWAY_TASKDECK_API_TOKEN: apiToken ?? "",
+    SLACK_WEBHOOK_URL: "",
+    SUPABASE_SERVICE_ROLE_KEY: "",
+    SUPABASE_URL: "",
+  };
+
+  if (options.productionLike) {
+    env.VERCEL = "1";
+  } else {
+    delete env.VERCEL;
+    delete env.VERCEL_ENV;
+  }
 
   const server = spawn(
     "npm",
@@ -160,15 +176,7 @@ async function withServer(apiToken, callback) {
     {
       cwd: process.cwd(),
       detached: true,
-      env: {
-        ...process.env,
-        APP_BASE_URL: baseUrl,
-        DECISION_GATEWAY_STORE_PATH: storePath,
-        DECISION_GATEWAY_TASKDECK_API_TOKEN: apiToken ?? "",
-        SLACK_WEBHOOK_URL: "",
-        SUPABASE_SERVICE_ROLE_KEY: "",
-        SUPABASE_URL: "",
-      },
+      env,
       stdio: ["ignore", "pipe", "pipe"],
     },
   );
@@ -384,6 +392,13 @@ async function main() {
   const devItemId = await withServer(null, async (baseUrl) =>
     runMailboxFlow(baseUrl, "tdi_mailbox_smoke_dev", null),
   );
+  await withServer(
+    null,
+    async (baseUrl) => {
+      await runTaskDeckAuthChecks(baseUrl);
+    },
+    { productionLike: true },
+  );
   let tokenItemId = "";
 
   await withServer(SMOKE_TASKDECK_API_TOKEN, async (baseUrl) => {
@@ -397,6 +412,7 @@ async function main() {
 
   console.log("TaskDeck mailbox smoke passed");
   console.log(`- token unset allowed the mailbox flow without Authorization (${devItemId})`);
+  console.log("- production-like token unset rejected protected endpoints with 401");
   console.log("- token set rejected missing Authorization on protected endpoints with 401");
   console.log("- token set rejected wrong Authorization on protected endpoints with 401");
   console.log(`- token set allowed the mailbox flow with correct Authorization (${tokenItemId})`);

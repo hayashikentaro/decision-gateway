@@ -74,4 +74,5 @@ TaskDeck must persist a mailbox item locally before ACK, then validate
 `DECISION_GATEWAY_TASKDECK_API_TOKEN` is configured, TaskDeck mailbox polling
 and ACK requests must include `Authorization: Bearer <token>` from the local
 TaskDeck server. This token is not sent to mobile browsers, QR URLs, Slack
-messages, or Decision Workspace pages.
+messages, or Decision Workspace pages. In deployed/production runtime, an unset
+token fails closed; no-token mailbox access is local-development only.

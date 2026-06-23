@@ -7,10 +7,11 @@ pairing state, mobile browser sessions, and recorded decision actions.
 
 - Slack is notification only. Slack messages contain the Decision Workspace URL
   and minimal routing context, but no pairing secrets or mobile session tokens.
-- TaskDeck server API calls can use a shared bearer token configured through
+- TaskDeck server API calls use a shared bearer token configured through
   `DECISION_GATEWAY_TASKDECK_API_TOKEN`. The token must be configured in both
-  Decision Gateway and local TaskDeck, and must not be sent to mobile browsers,
-  QR URLs, Slack messages, or Decision Workspace pages.
+  Decision Gateway and local TaskDeck outside local development, and must not
+  be sent to mobile browsers, QR URLs, Slack messages, or Decision Workspace
+  pages.
 - TaskDeck is the local trust root and final gate for applying decisions to AI
   sessions.
 - Decision Gateway records decision results. It does not directly command AI
@@ -22,9 +23,11 @@ pairing state, mobile browser sessions, and recorded decision actions.
 
 ## TaskDeck Server API Token
 
-`DECISION_GATEWAY_TASKDECK_API_TOKEN` is optional for local development. If it
-is unset, TaskDeck-facing APIs keep current development behavior. If it is set,
-Decision Gateway requires this exact server-side header:
+`DECISION_GATEWAY_TASKDECK_API_TOKEN` is optional only for local development. If
+it is unset in local development, TaskDeck-facing APIs keep current development
+behavior. If it is unset in a deployed/production runtime (`VERCEL` or
+`NODE_ENV=production`), TaskDeck-facing APIs fail closed with `401 Unauthorized`.
+If it is set, Decision Gateway requires this exact server-side header:
 
 ```text
 Authorization: Bearer <token>
@@ -112,8 +115,9 @@ The current TaskDeck mailbox API is an MVP/dev surface:
   request body has the matching `taskdeckInstanceId`.
 
 When `DECISION_GATEWAY_TASKDECK_API_TOKEN` is configured, this API requires the
-TaskDeck API bearer token in addition to `taskdeckInstanceId` scoping. The
-current no-token mode is for local development only.
+TaskDeck API bearer token in addition to `taskdeckInstanceId` scoping. If the
+token is unset in deployed/production runtime, mailbox polling and ACK fail
+closed with `401 Unauthorized`. The no-token mode is for local development only.
 
 TaskDeck must validate `requestId`, `taskId`, and `sessionId` against its local
 state before applying any result. It must persist a mailbox item locally before

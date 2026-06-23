@@ -6,6 +6,10 @@ function unauthorizedResponse(): NextResponse {
   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 }
 
+function isProductionLikeRuntime(): boolean {
+  return Boolean(process.env.VERCEL) || process.env.NODE_ENV === "production";
+}
+
 function constantTimeEqual(expected: string, actual: string): boolean {
   const expectedBuffer = Buffer.from(expected);
   const actualBuffer = Buffer.from(actual);
@@ -28,7 +32,7 @@ export function requireTaskDeckApiAuth(request: Request): NextResponse | null {
   const configuredToken = process.env.DECISION_GATEWAY_TASKDECK_API_TOKEN;
 
   if (!configuredToken) {
-    return null;
+    return isProductionLikeRuntime() ? unauthorizedResponse() : null;
   }
 
   const authorization = request.headers.get("authorization") ?? "";

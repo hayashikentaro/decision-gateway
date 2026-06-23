@@ -13,34 +13,51 @@ function getBaseUrl(request: Request): string {
   return url.origin;
 }
 
-export async function POST(request: Request) {
-  const body = await request.json().catch(() => null);
-  const parsed = decisionRequestInputSchema.safeParse(body);
+function logUnexpectedError(error: unknown): void {
+  const maybeErrno = error as NodeJS.ErrnoException;
 
-  if (!parsed.success) {
+  console.error("[decision-gateway] unexpected decision request API error", {
+    code: typeof maybeErrno.code === "string" ? maybeErrno.code : "UNKNOWN",
+    message: error instanceof Error ? error.message : String(error),
+  });
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json().catch(() => null);
+    const parsed = decisionRequestInputSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          error: "Invalid decision request",
+          issues: parsed.error.flatten(),
+        },
+        { status: 400 },
+      );
+    }
+
+    const stored = await createDecisionRequest(parsed.data, getBaseUrl(request));
+
+    try {
+      await notifyDecisionRequired(stored);
+    } catch (error) {
+      logUnexpectedError(error);
+    }
+
     return NextResponse.json(
       {
-        error: "Invalid decision request",
-        issues: parsed.error.flatten(),
+        id: stored.id,
+        requestId: stored.requestId,
+        url: stored.url,
       },
-      { status: 400 },
+      { status: 201 },
+    );
+  } catch (error) {
+    logUnexpectedError(error);
+    return NextResponse.json(
+      { error: "Unexpected server error" },
+      { status: 500 },
     );
   }
-
-  const stored = await createDecisionRequest(parsed.data, getBaseUrl(request));
-
-  try {
-    await notifyDecisionRequired(stored);
-  } catch (error) {
-    console.error(error);
-  }
-
-  return NextResponse.json(
-    {
-      id: stored.id,
-      requestId: stored.requestId,
-      url: stored.url,
-    },
-    { status: 201 },
-  );
 }

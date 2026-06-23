@@ -64,17 +64,28 @@ cp .env.example .env.local
 Available variables:
 
 - `APP_BASE_URL`: Base URL used when generating Decision Workspace links. Defaults to the request origin when unset.
+- `DECISION_GATEWAY_STORE_PATH`: Optional exact file path for the temporary file-backed decision store.
 - `SLACK_WEBHOOK_URL`: Optional Slack incoming webhook. When set, Decision Gateway sends the minimal notification payload to Slack.
 
 ### Local Persistence
 
-Development data is stored in:
+The file-backed decision store is for local development and MVP smoke testing
+only. Local development data is stored in:
 
 ```text
 data/decision-requests.json
 ```
 
-That file is ignored by Git because decision requests, materials, and decisions may contain sensitive context. The persistence layer lives behind `lib/decision-store.ts` so it can later be replaced by Supabase/Postgres.
+That file is ignored by Git because decision requests, materials, and decisions may contain sensitive context. In Vercel or production runtime, the temporary smoke-test store uses:
+
+```text
+/tmp/decision-gateway/decision-requests.json
+```
+
+The Vercel `/tmp` store is writable but not durable and may disappear between
+invocations, deployments, or runtime instance changes. Supabase/Postgres is
+required before production use. The persistence layer lives behind
+`lib/decision-store.ts` so it can later be replaced by Supabase/Postgres.
 
 ### Example Decision Request
 

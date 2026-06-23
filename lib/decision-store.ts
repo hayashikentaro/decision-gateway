@@ -8,14 +8,52 @@ import type {
   StoredDecisionRequest,
 } from "./decision-types";
 
-const dataDir = path.join(process.cwd(), "data");
-const storePath = path.join(dataDir, "decision-requests.json");
+const localStorePath = path.join(
+  process.cwd(),
+  "data",
+  "decision-requests.json",
+);
+const temporaryStorePath = "/tmp/decision-gateway/decision-requests.json";
 
 type StoreFile = {
   requests: StoredDecisionRequest[];
 };
 
+function getDecisionStorePath(): string {
+  if (process.env.DECISION_GATEWAY_STORE_PATH) {
+    return process.env.DECISION_GATEWAY_STORE_PATH;
+  }
+
+  if (process.env.VERCEL || process.env.NODE_ENV === "production") {
+    return temporaryStorePath;
+  }
+
+  return localStorePath;
+}
+
+function getErrorDetails(error: unknown): { code: string; message: string } {
+  const maybeErrno = error as NodeJS.ErrnoException;
+
+  return {
+    code: typeof maybeErrno.code === "string" ? maybeErrno.code : "UNKNOWN",
+    message: error instanceof Error ? error.message : String(error),
+  };
+}
+
+function logStoreFailure(operation: "read" | "write", error: unknown): void {
+  const { code, message } = getErrorDetails(error);
+
+  console.error("[decision-store] file store failure", {
+    operation,
+    storePath: getDecisionStorePath(),
+    code,
+    message,
+  });
+}
+
 async function readStore(): Promise<StoreFile> {
+  const storePath = getDecisionStorePath();
+
   try {
     const raw = await readFile(storePath, "utf8");
     return JSON.parse(raw) as StoreFile;
@@ -24,13 +62,21 @@ async function readStore(): Promise<StoreFile> {
       return { requests: [] };
     }
 
+    logStoreFailure("read", error);
     throw error;
   }
 }
 
 async function writeStore(store: StoreFile): Promise<void> {
-  await mkdir(dataDir, { recursive: true });
-  await writeFile(storePath, `${JSON.stringify(store, null, 2)}\n`, "utf8");
+  const storePath = getDecisionStorePath();
+
+  try {
+    await mkdir(path.dirname(storePath), { recursive: true });
+    await writeFile(storePath, `${JSON.stringify(store, null, 2)}\n`, "utf8");
+  } catch (error) {
+    logStoreFailure("write", error);
+    throw error;
+  }
 }
 
 export async function createDecisionRequest(

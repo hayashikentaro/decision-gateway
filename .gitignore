@@ -1,0 +1,8 @@
+node_modules/
+.next/
+out/
+data/decision-requests.json
+.env
+.env*.local
+npm-debug.log*
+tsconfig.tsbuildinfo

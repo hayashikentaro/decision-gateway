@@ -34,9 +34,99 @@ TaskDeck should not generate the Decision Workspace UI. Decision Gateway should 
 - Record the human decision and supporting instruction.
 - Treat insufficient materials as a first-class decision outcome.
 
+Near-term plan: [Slack notification MVP](docs/plans/slack-notification-mvp.md).
+
 ## Local Development
 
-Implementation is not bootstrapped yet. When app code is added, document the normal local setup here, including install, run, environment variables, and verification commands.
+Decision Gateway currently has a minimal Next.js MVP with file-backed local persistence.
+
+Use Node 20 and npm 10. This repository is pinned with Volta metadata:
+
+```bash
+npm install
+npm run dev
+```
+
+Then open:
+
+```text
+http://localhost:3000
+```
+
+### Environment Variables
+
+Copy the example environment file when local overrides are needed:
+
+```bash
+cp .env.example .env.local
+```
+
+Available variables:
+
+- `APP_BASE_URL`: Base URL used when generating Decision Workspace links. Defaults to the request origin when unset.
+- `SLACK_WEBHOOK_URL`: Optional Slack incoming webhook. When set, Decision Gateway sends the minimal notification payload to Slack.
+
+### Local Persistence
+
+Development data is stored in:
+
+```text
+data/decision-requests.json
+```
+
+That file is ignored by Git because decision requests, materials, and decisions may contain sensitive context. The persistence layer lives behind `lib/decision-store.ts` so it can later be replaced by Supabase/Postgres.
+
+### Example Decision Request
+
+```bash
+curl -X POST http://localhost:3000/api/decision-requests \
+  -H "content-type: application/json" \
+  -d '{
+    "source": {
+      "type": "taskdeck",
+      "taskId": "task_123",
+      "sessionId": "session_456",
+      "label": "TaskDeck"
+    },
+    "goal": "Keep the task metadata model extensible without forcing every source to provide the same fields.",
+    "axis": "data_model",
+    "urgency": "blocking",
+    "decisionQuestion": "Should the agent add an optional metadata field to the decision request model?",
+    "semanticSummary": "The agent needs to preserve source-specific context for future result routing, but the core protocol should remain source-neutral.",
+    "materials": [
+      {
+        "type": "link",
+        "label": "Proposed protocol notes",
+        "url": "https://example.invalid/protocol-notes"
+      }
+    ],
+    "recommendedDecision": {
+      "decision": "conditional_accept",
+      "reason": "Allow optional metadata only if generic protocol fields remain source-neutral."
+    }
+  }'
+```
+
+Expected response:
+
+```json
+{
+  "id": "dec_...",
+  "requestId": "req_...",
+  "url": "http://localhost:3000/decisions/dec_..."
+}
+```
+
+Open the returned `url` to review the Decision Workspace and record a decision.
+
+### Checks
+
+```bash
+npm run lint
+npm run typecheck
+npm run build
+git diff --check
+```
 
 ## Current Non-Goals
 
@@ -46,3 +136,4 @@ Implementation is not bootstrapped yet. When app code is added, document the nor
 - No approval-rate optimization.
 - No notification without a clear decision question.
 - No broad connector marketplace or orchestration runtime in this repository.
+- No cloud mailbox polling, agent resume, native push, Web Push, auth, multi-user/team support, or Supabase integration yet.

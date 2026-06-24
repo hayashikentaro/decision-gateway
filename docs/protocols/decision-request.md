@@ -27,7 +27,7 @@ TaskDeck may emit this protocol, but the protocol is not TaskDeck-only.
     }
   ],
   "recommendedDecision": {
-    "decision": "approve",
+    "decision": "proceed",
     "reason": "The migration is narrow and matches the current schema."
   }
 }

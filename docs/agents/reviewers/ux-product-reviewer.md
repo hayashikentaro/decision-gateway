@@ -11,7 +11,7 @@ Check whether the change:
 - reduces or preserves human cognitive cost;
 - makes the decision question clear;
 - separates source recommendation from human decision;
-- supports `insufficient_materials` as a valid outcome;
+- supports `need_more_information` as a valid outcome;
 - avoids optimizing for approval rate;
 - avoids notification spam and duplicate low-value prompts.
 

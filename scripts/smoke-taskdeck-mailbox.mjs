@@ -251,9 +251,9 @@ async function runMailboxFlow(baseUrl, taskdeckInstanceId, apiToken) {
         },
       ],
       recommendedDecision: {
-        decision: "accept",
+        decision: "proceed",
         reason:
-          "Accept only records a passive smoke result for mailbox delivery verification.",
+          "Proceed only records a passive smoke result for mailbox delivery verification.",
       },
     },
   });
@@ -264,8 +264,8 @@ async function runMailboxFlow(baseUrl, taskdeckInstanceId, apiToken) {
       cookie: sessionCookie,
     },
     body: {
-      type: "accept",
-      reason: "Passive smoke decision only; no local execution authorized.",
+      action: "proceed",
+      note: "Passive smoke decision only; no local execution authorized.",
     },
   });
 
@@ -281,6 +281,15 @@ async function runMailboxFlow(baseUrl, taskdeckInstanceId, apiToken) {
   const firstItem = firstPoll.body.items[0];
   assert(firstItem.status === "picked_up", "First mailbox item was not picked_up");
   assert(firstItem.pickedUpAt, "First mailbox item did not get pickedUpAt");
+  assert(
+    firstItem.payload.action.action === "proceed",
+    "First mailbox item did not use proceed action",
+  );
+  assert(
+    firstItem.payload.action.note ===
+      "Passive smoke decision only; no local execution authorized.",
+    "First mailbox item did not include the decision note",
+  );
 
   const secondPoll = await requestJson(
     baseUrl,

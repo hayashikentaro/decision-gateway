@@ -30,7 +30,7 @@ export function DecisionActions({ request }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   async function submit(action: DecisionActionInput) {
-    setPendingAction(action.type);
+    setPendingAction(action.action);
     setError(null);
 
     try {
@@ -45,15 +45,14 @@ export function DecisionActions({ request }: Props) {
 
   function submitForm(
     event: FormEvent<HTMLFormElement>,
-    type: DecisionActionInput["type"],
-    field: "condition" | "reason",
+    action: DecisionActionInput["action"],
   ) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const value = String(form.get(field) ?? "").trim();
+    const value = String(form.get("note") ?? "").trim();
     void submit({
-      type,
-      [field]: value || undefined,
+      action,
+      note: value || undefined,
     });
   }
 
@@ -63,11 +62,9 @@ export function DecisionActions({ request }: Props) {
         <h2>Recorded decision</h2>
         <dl className="definition" style={{ marginTop: 14 }}>
           <dt>Outcome</dt>
-          <dd>{request.decision?.type}</dd>
-          <dt>Condition</dt>
-          <dd>{request.decision?.condition || "None"}</dd>
-          <dt>Reason</dt>
-          <dd>{request.decision?.reason || "None"}</dd>
+          <dd>{request.decision?.action}</dd>
+          <dt>Note</dt>
+          <dd>{request.decision?.note || "None"}</dd>
           <dt>Decided at</dt>
           <dd>{request.decision?.decidedAt}</dd>
         </dl>
@@ -80,95 +77,70 @@ export function DecisionActions({ request }: Props) {
       <div>
         <h2>Record judgment</h2>
         <p className="muted">
-          Choose the outcome after reviewing the workspace context. Insufficient
-          materials is a valid decision, not a failure.
+          Choose the next agent action after reviewing the workspace context.
+          Missing information is a valid decision, not a failure.
         </p>
       </div>
 
       {error ? <p className="status-pending">{error}</p> : null}
 
       <div className="action-box">
-        <h3>Conditional accept</h3>
-        <form
-          onSubmit={(event) =>
-            submitForm(event, "conditional_accept", "condition")
-          }
-        >
-          <textarea
-            name="condition"
-            placeholder="Condition required before the agent proceeds"
-          />
-          <button
-            className="button secondary"
-            disabled={pendingAction !== null}
-            type="submit"
-          >
-            Conditional accept
-          </button>
-        </form>
-      </div>
-
-      <div className="action-box">
-        <h3>Insufficient materials</h3>
-        <form
-          onSubmit={(event) =>
-            submitForm(event, "insufficient_materials", "reason")
-          }
-        >
-          <textarea
-            name="reason"
-            placeholder="What is missing or unclear?"
-          />
-          <button
-            className="button secondary"
-            disabled={pendingAction !== null}
-            type="submit"
-          >
-            Insufficient materials
-          </button>
-        </form>
-      </div>
-
-      <div className="action-box">
-        <h3>Accept</h3>
+        <h3>Proceed</h3>
         <p className="muted">
-          Use only when the request is clear and the provided materials are
-          enough to proceed.
+          Continue with the recommended action. Add constraints only if needed.
         </p>
-        <button
-          className="button secondary"
-          disabled={pendingAction !== null}
-          onClick={() => void submit({ type: "accept" })}
-          type="button"
-        >
-          Accept
-        </button>
-      </div>
-
-      <div className="action-box">
-        <h3>Suspend</h3>
-        <form onSubmit={(event) => submitForm(event, "suspend", "reason")}>
-          <textarea name="reason" placeholder="Optional reason or next step" />
+        <form onSubmit={(event) => submitForm(event, "proceed")}>
+          <textarea
+            name="note"
+            placeholder="Optional constraints or instructions"
+          />
           <button
             className="button secondary"
             disabled={pendingAction !== null}
             type="submit"
           >
-            Suspend
+            Proceed
           </button>
         </form>
       </div>
 
       <div className="action-box">
-        <h3>Reject</h3>
-        <form onSubmit={(event) => submitForm(event, "reject", "reason")}>
-          <textarea name="reason" placeholder="Optional rejection reason" />
+        <h3>Revise plan</h3>
+        <p className="muted">
+          Do not implement yet. Revise the plan using this feedback and ask
+          again.
+        </p>
+        <form onSubmit={(event) => submitForm(event, "revise_plan")}>
+          <textarea
+            name="note"
+            placeholder="Feedback for the revised plan"
+          />
           <button
-            className="button danger"
+            className="button secondary"
             disabled={pendingAction !== null}
             type="submit"
           >
-            Reject
+            Revise plan
+          </button>
+        </form>
+      </div>
+
+      <div className="action-box">
+        <h3>Need more information</h3>
+        <p className="muted">
+          Do not implement yet. Provide the missing information and ask again.
+        </p>
+        <form onSubmit={(event) => submitForm(event, "need_more_information")}>
+          <textarea
+            name="note"
+            placeholder="Missing facts, materials, or context"
+          />
+          <button
+            className="button secondary"
+            disabled={pendingAction !== null}
+            type="submit"
+          >
+            Need more information
           </button>
         </form>
       </div>

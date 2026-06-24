@@ -14,10 +14,14 @@ This guide covers reusable UI component expectations for Decision Gateway.
 
 Decision controls should support the expected outcomes for the request type. At minimum, design for:
 
-- approve or accept;
-- reject or decline;
-- request revision or clarify;
-- insufficient materials.
+- proceed;
+- revise plan;
+- need more information.
+
+For TaskDeck-oriented agent continuation, `proceed` may include an optional note.
+An empty note means plain proceed; a non-empty note carries constraints or
+instructions. Do not add a separate primary button for proceeding with
+constraints.
 
 The source recommendation must not preselect the human decision unless the product explicitly chooses that behavior after review.
 

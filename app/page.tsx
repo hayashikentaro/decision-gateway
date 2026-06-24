@@ -21,8 +21,8 @@ const sampleCurl = `curl -X POST http://localhost:3000/api/decision-requests \\
       }
     ],
     "recommendedDecision": {
-      "decision": "conditional_accept",
-      "reason": "Allow optional metadata only if generic protocol fields remain source-neutral."
+      "decision": "proceed",
+      "reason": "Continue only if generic protocol fields remain source-neutral."
     }
   }'`;
 

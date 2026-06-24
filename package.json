@@ -16,6 +16,7 @@
     "build": "NODE_ENV=production next build",
     "start": "next start",
     "lint": "eslint .",
+    "test": "rm -rf .test-build && tsc --outDir .test-build --noEmit false --incremental false --tsBuildInfoFile .test-build/tsconfig.tsbuildinfo && node scripts/prepare-test-build.mjs && node --test .test-build/tests/*.test.js",
     "smoke:mailbox": "node scripts/smoke-taskdeck-mailbox.mjs",
     "typecheck": "tsc --noEmit"
   },

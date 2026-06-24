@@ -59,11 +59,9 @@ Exact branch and commit details are tracked in TaskDeck.
 8. Smartphone receives the Slack notification.
 9. Open the Decision Workspace link from the smartphone.
 10. Record one decision action in the web UI:
-    - `accept`
-    - `conditional_accept`
-    - `suspend`
-    - `reject`
-    - `insufficient_materials`
+    - `proceed`
+    - `revise_plan`
+    - `need_more_information`
 
 This milestone is intentionally one-way: recording a decision does not update TaskDeck.
 

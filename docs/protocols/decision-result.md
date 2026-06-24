@@ -14,8 +14,8 @@ outside Decision Gateway's execution boundary.
 {
   "decisionId": "dec_01HZXAMPLE",
   "requestId": "req_01HZXAMPLE",
-  "decision": "approve",
-  "agentInstruction": "Apply the migration, then run the database compatibility checks before continuing.",
+  "action": "proceed",
+  "note": "Run the database compatibility checks before continuing.",
   "target": {
     "type": "source_request",
     "sourceId": "taskdeck-local",
@@ -37,13 +37,31 @@ outside Decision Gateway's execution boundary.
 
 - `decisionId`: Stable id for the recorded decision.
 - `requestId`: Stable id for the original decision request.
-- `decision`: Human outcome, such as `approve`, `reject`, `revise`, `insufficient_materials`, or another documented value.
-- `agentInstruction`: Optional instruction to the requesting system or agent.
+- `action`: Human outcome. Primary values are `proceed`, `revise_plan`, and
+  `need_more_information`.
+- `note`: Optional human note. For `proceed`, a non-empty note is a constraint
+  or instruction for continuing.
 - `target`: Destination metadata for the source system. Keep this source-neutral.
 - `delivery.mode`: Return path mode, such as `mailbox`, `webhook`, or `manual_export`.
 - `delivery.status`: Delivery lifecycle state. Current mailbox statuses are
   `pending`, `picked_up`, `acknowledged`, and `expired`.
 - `stale`: Whether the request or source state became stale before the decision was delivered.
+
+## Response Actions
+
+- `proceed`: Continue with the source or agent's recommended resume action. If
+  `note` is present, continue under those constraints or instructions.
+- `revise_plan`: Do not implement yet. Revise the plan according to `note`, then
+  ask again through Decision Gateway before implementing.
+- `need_more_information`: Do not implement yet. Provide the missing facts,
+  materials, or context requested in `note`, then ask again through Decision
+  Gateway when the materials are ready.
+
+Decision Gateway still accepts legacy action submissions for compatibility.
+`accept` and `conditional_accept` normalize to `proceed`, and
+`insufficient_materials` normalizes to `need_more_information`. Legacy
+pause/stop-like outcomes are compatibility-only until source systems define
+explicit suspended or cancelled task state transitions.
 
 ## Mailbox Delivery Semantics
 

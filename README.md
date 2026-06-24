@@ -201,8 +201,8 @@ curl -X POST http://localhost:3000/api/decision-requests \
       }
     ],
     "recommendedDecision": {
-      "decision": "conditional_accept",
-      "reason": "Allow optional metadata only if generic protocol fields remain source-neutral."
+      "decision": "proceed",
+      "reason": "Continue only if generic protocol fields remain source-neutral."
     }
   }'
 ```
@@ -223,6 +223,33 @@ Expected response:
 
 Open the returned `url` in a paired browser to review the Decision Workspace and
 record a decision.
+
+### Decision Response Model
+
+The Decision Workspace presents three primary response actions:
+
+- `proceed`: Continue with the recommended action. An empty note means plain
+  proceed; a non-empty note is treated as additional constraints or
+  instructions for continuing.
+- `revise_plan`: Do not implement yet. Revise the plan using the human feedback
+  in `note`, then ask again through Decision Gateway before implementing.
+- `need_more_information`: Do not implement yet. Provide the missing
+  information, materials, or context requested in `note`, then ask again through
+  Decision Gateway when ready.
+
+The decision action API accepts the new shape:
+
+```json
+{
+  "action": "proceed",
+  "note": "Run compatibility checks before continuing."
+}
+```
+
+Legacy action submissions are normalized for compatibility: `accept` and
+`conditional_accept` become `proceed`, while `insufficient_materials` becomes
+`need_more_information`. Legacy `reject` and `suspend` remain non-primary
+compatibility outcomes and are not shown in the TaskDeck-oriented workspace UI.
 
 ### TaskDeck Result Mailbox
 
@@ -260,9 +287,12 @@ until TaskDeck acknowledges them:
         "taskId": "task_123",
         "sessionId": "session_456",
         "action": {
-          "type": "accept",
+          "action": "proceed",
+          "note": null,
+          "type": "proceed",
           "condition": null,
           "reason": null,
+          "legacyType": null,
           "decidedAt": "2026-06-23T00:00:00.000Z"
         },
         "source": {

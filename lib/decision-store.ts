@@ -15,6 +15,11 @@ import type {
   StoredDecisionRequest,
   ValidatedMobileSession,
 } from "./decision-types";
+import {
+  getDecisionActionCondition,
+  getDecisionActionReason,
+  normalizeDecisionAction,
+} from "./decision-types";
 import { hashSecret } from "./token-utils";
 
 const localStorePath = path.join("data", "decision-requests.json");
@@ -112,7 +117,7 @@ type SupabaseDecisionActionRow = {
   id: string;
   decision_request_id: string;
   paired_device_id: string | null;
-  type: DecisionActionInput["type"];
+  type: string;
   condition: string | null;
   reason: string | null;
   decided_at: string;
@@ -220,9 +225,50 @@ function logStoreFailure(operation: string, error: unknown): void {
   });
 }
 
+type PossiblyLegacyStoredDecisionAction = StoredDecisionAction & {
+  type?: unknown;
+  condition?: unknown;
+  reason?: unknown;
+};
+
+function normalizeStoredDecisionAction(
+  action: PossiblyLegacyStoredDecisionAction,
+): StoredDecisionAction {
+  const legacyNote =
+    typeof action.reason === "string"
+      ? action.reason
+      : typeof action.condition === "string"
+        ? action.condition
+        : undefined;
+  const normalized = normalizeDecisionAction(action) ?? {
+    action: "legacy_reject" as const,
+    note: action.note ?? legacyNote,
+  };
+
+  return {
+    id: action.id,
+    ...normalized,
+    pairedDeviceId: action.pairedDeviceId,
+    decidedAt: action.decidedAt,
+  };
+}
+
+function normalizeStoredDecisionRequest(
+  request: StoredDecisionRequest,
+): StoredDecisionRequest {
+  return {
+    ...request,
+    decision: request.decision
+      ? normalizeStoredDecisionAction(request.decision)
+      : undefined,
+  };
+}
+
 function normalizeStore(store: StoreFile): StoreFile {
   return {
-    requests: Array.isArray(store.requests) ? store.requests : [],
+    requests: Array.isArray(store.requests)
+      ? store.requests.map(normalizeStoredDecisionRequest)
+      : [],
     decisionResultMailbox: Array.isArray(store.decisionResultMailbox)
       ? store.decisionResultMailbox
       : [],
@@ -336,11 +382,18 @@ function buildStoredDecisionRequest(
 }
 
 function mapActionRow(row: SupabaseDecisionActionRow): StoredDecisionAction {
+  const normalized = normalizeDecisionAction({
+    type: row.type,
+    condition: row.condition,
+    reason: row.reason,
+  }) ?? {
+    action: "legacy_reject" as const,
+    note: row.reason ?? row.condition ?? undefined,
+  };
+
   return {
     id: row.id,
-    type: row.type,
-    condition: row.condition ?? undefined,
-    reason: row.reason ?? undefined,
+    ...normalized,
     pairedDeviceId: row.paired_device_id ?? undefined,
     decidedAt: row.decided_at,
   };
@@ -414,9 +467,12 @@ function buildDecisionResultPayload(
     taskId: request.taskId ?? null,
     sessionId: request.sessionId ?? null,
     action: {
-      type: action.type,
-      condition: action.condition ?? null,
-      reason: action.reason ?? null,
+      action: action.action,
+      note: action.note ?? null,
+      type: action.action,
+      condition: getDecisionActionCondition(action) ?? null,
+      reason: getDecisionActionReason(action) ?? null,
+      legacyType: action.legacyType ?? null,
       decidedAt: action.decidedAt,
     },
     source: request.source,
@@ -669,9 +725,9 @@ async function recordDecisionActionInSupabase(
       id: actionId,
       decision_request_id: id,
       paired_device_id: pairedDeviceId ?? null,
-      type: action.type,
-      condition: action.condition ?? null,
-      reason: action.reason ?? null,
+      type: action.action,
+      condition: getDecisionActionCondition(action) ?? null,
+      reason: getDecisionActionReason(action) ?? null,
       decided_at: now,
     });
 

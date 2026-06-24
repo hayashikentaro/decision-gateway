@@ -40,7 +40,7 @@ The workspace is the primary decision surface. It should present:
 - materials and links;
 - recommended decision when provided;
 - stale-state warnings;
-- actions for decision, instruction, or insufficient materials.
+- actions to proceed, revise the plan, or request more information.
 
 The workspace is owned by Decision Gateway. Source systems may provide context and materials, but they do not generate the workspace UI.
 

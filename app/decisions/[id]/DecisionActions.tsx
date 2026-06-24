@@ -114,7 +114,7 @@ export function DecisionActions({ request }: Props) {
         <form onSubmit={(event) => submitForm(event, "proceed")}>
           <textarea
             name="note"
-            placeholder="Optional constraints or instructions"
+            placeholder="Optional: constraints for proceeding"
           />
           <button
             className="button secondary"
@@ -135,7 +135,7 @@ export function DecisionActions({ request }: Props) {
         <form onSubmit={(event) => submitForm(event, "revise_plan")}>
           <textarea
             name="note"
-            placeholder="Feedback for the revised plan"
+            placeholder="What should change before retrying?"
           />
           <button
             className="button secondary"
@@ -155,7 +155,7 @@ export function DecisionActions({ request }: Props) {
         <form onSubmit={(event) => submitForm(event, "need_more_information")}>
           <textarea
             name="note"
-            placeholder="Missing facts, materials, or context"
+            placeholder="What facts or materials are missing?"
           />
           <button
             className="button secondary"

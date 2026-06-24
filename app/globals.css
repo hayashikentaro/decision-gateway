@@ -133,6 +133,27 @@ h3 {
   color: var(--muted);
 }
 
+.decision-brief {
+  display: grid;
+  gap: 12px;
+}
+
+.decision-brief dl {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.decision-brief dt {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.decision-brief dd {
+  margin: -6px 0 0;
+  overflow-wrap: anywhere;
+}
+
 .meta {
   display: flex;
   flex-wrap: wrap;

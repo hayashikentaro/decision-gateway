@@ -125,6 +125,21 @@ export default async function DecisionWorkspacePage({
             </div>
           </section>
 
+          <section className="panel decision-brief">
+            <p className="eyebrow">Decision brief</p>
+            <h2>Use the recommendation as context, then choose an action.</h2>
+            <dl>
+              <dt>Recommendation</dt>
+              <dd>{stringify(request.recommendedDecision)}</dd>
+              <dt>Proceed</dt>
+              <dd>Continue with the recommendation, with optional constraints.</dd>
+              <dt>Revise plan</dt>
+              <dd>Send feedback and ask for a revised plan before work continues.</dd>
+              <dt>Need more information</dt>
+              <dd>Ask for missing facts, materials, or context before deciding.</dd>
+            </dl>
+          </section>
+
           <section className="panel">
             <h2>Context</h2>
             <dl className="definition" style={{ marginTop: 14 }}>
@@ -181,14 +196,14 @@ export default async function DecisionWorkspacePage({
               ))}
             </div>
           </details>
-
-          <details>
-            <summary>Raw payload</summary>
-            <pre>{JSON.stringify(request.rawPayload, null, 2)}</pre>
-          </details>
         </div>
 
         <DecisionActions request={request} />
+
+        <details>
+          <summary>Raw payload</summary>
+          <pre>{JSON.stringify(request.rawPayload, null, 2)}</pre>
+        </details>
       </div>
     </main>
   );

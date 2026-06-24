@@ -28,6 +28,7 @@ export function DecisionActions({ request }: Props) {
   const router = useRouter();
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showCloseFallback, setShowCloseFallback] = useState(false);
 
   async function submit(action: DecisionActionInput) {
     setPendingAction(action.action);
@@ -56,6 +57,12 @@ export function DecisionActions({ request }: Props) {
     });
   }
 
+  function closeTab() {
+    setShowCloseFallback(false);
+    window.close();
+    window.setTimeout(() => setShowCloseFallback(true), 150);
+  }
+
   if (request.status === "resolved") {
     return (
       <section className="panel">
@@ -68,6 +75,20 @@ export function DecisionActions({ request }: Props) {
           <dt>Decided at</dt>
           <dd>{request.decision?.decidedAt}</dd>
         </dl>
+        <div className="button-row" style={{ marginTop: 16 }}>
+          <button
+            className="button secondary"
+            onClick={closeTab}
+            type="button"
+          >
+            Close
+          </button>
+        </div>
+        {showCloseFallback ? (
+          <p className="muted" style={{ marginBottom: 0 }}>
+            If this tab does not close, close it from your browser tab list.
+          </p>
+        ) : null}
       </section>
     );
   }

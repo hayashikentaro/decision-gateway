@@ -39,7 +39,7 @@ function renderUnknownList(value: unknown, fallback: string) {
 
 function UnpairedBrowserPage() {
   return (
-    <main className="page">
+    <main className="page decision-page">
       <div className="header">
         <div>
           <p className="eyebrow">Decision Workspace</p>
@@ -52,13 +52,15 @@ function UnpairedBrowserPage() {
         <Link href="/">Home</Link>
       </div>
 
-      <section className="panel">
-        <h2>Pairing required</h2>
-        <p className="muted">
-          Decision details are only shown to a paired mobile browser. Slack
-          notifications are entry points and do not carry session secrets.
-        </p>
-      </section>
+      <div className="decision-workspace">
+        <section className="panel">
+          <h2>Pairing required</h2>
+          <p className="muted">
+            Decision details are only shown to a paired mobile browser. Slack
+            notifications are entry points and do not carry session secrets.
+          </p>
+        </section>
+      </div>
     </main>
   );
 }
@@ -91,7 +93,7 @@ export default async function DecisionWorkspacePage({
     "Unknown source";
 
   return (
-    <main className="page">
+    <main className="page decision-page">
       <div className="header">
         <div>
           <p className="eyebrow">Decision Workspace</p>
@@ -104,7 +106,7 @@ export default async function DecisionWorkspacePage({
         <Link href="/">Home</Link>
       </div>
 
-      <div className="grid">
+      <div className="decision-workspace">
         <div className="stack">
           <section className="panel question">
             <p className="eyebrow">Decision question</p>

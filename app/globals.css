@@ -42,6 +42,11 @@ textarea {
   padding: 32px 20px 56px;
 }
 
+.decision-page {
+  max-width: 760px;
+  padding: 24px 14px 48px;
+}
+
 .header {
   display: flex;
   flex-wrap: wrap;
@@ -95,6 +100,16 @@ h3 {
 .stack {
   display: grid;
   gap: 18px;
+  min-width: 0;
+}
+
+.decision-workspace {
+  display: grid;
+  gap: 18px;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  min-width: 0;
 }
 
 .panel {
@@ -102,6 +117,7 @@ h3 {
   border-radius: 8px;
   background: var(--panel);
   padding: 18px;
+  min-width: 0;
 }
 
 .question {
@@ -166,15 +182,24 @@ h3 {
   min-width: 0;
 }
 
+.decision-page p,
+.decision-page li,
+.decision-page dd,
+.decision-page a {
+  overflow-wrap: anywhere;
+}
+
 .list {
   margin: 12px 0 0;
   padding-left: 22px;
+  min-width: 0;
 }
 
 .material-list {
   display: grid;
   gap: 10px;
   margin-top: 12px;
+  min-width: 0;
 }
 
 .material {
@@ -182,6 +207,7 @@ h3 {
   border-radius: 6px;
   padding: 12px;
   background: #fbfcfe;
+  min-width: 0;
 }
 
 .material p {
@@ -194,6 +220,7 @@ details {
   border-radius: 8px;
   background: var(--panel);
   padding: 14px 18px;
+  min-width: 0;
 }
 
 details summary {
@@ -202,17 +229,36 @@ details summary {
 }
 
 pre {
-  overflow: auto;
+  max-width: 100%;
+  overflow-x: auto;
   border-radius: 6px;
   background: #101820;
   color: #eef3f9;
   padding: 14px;
   font-size: 0.86rem;
+  white-space: pre;
+}
+
+code {
+  overflow-wrap: anywhere;
+}
+
+table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  overflow-wrap: anywhere;
 }
 
 .actions {
   display: grid;
   gap: 14px;
+  min-width: 0;
 }
 
 .action-box {
@@ -220,6 +266,7 @@ pre {
   border-radius: 8px;
   padding: 14px;
   background: #fbfcfe;
+  min-width: 0;
 }
 
 .action-box form {
@@ -326,5 +373,24 @@ input {
 
   .definition {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .decision-page {
+    padding: 18px 10px 40px;
+  }
+
+  .decision-page .header {
+    margin-bottom: 18px;
+  }
+
+  .decision-page .panel,
+  .decision-page details {
+    padding: 14px;
+  }
+
+  .question h2 {
+    font-size: 1.5rem;
   }
 }

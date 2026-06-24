@@ -87,7 +87,8 @@ export function DecisionActions({ request }: Props) {
       <div className="action-box">
         <h3>Proceed</h3>
         <p className="muted">
-          Continue with the recommended action. Add constraints only if needed.
+          Leave blank to continue with the recommended action. Add constraints
+          only if needed.
         </p>
         <form onSubmit={(event) => submitForm(event, "proceed")}>
           <textarea

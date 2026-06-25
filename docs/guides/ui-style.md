@@ -20,8 +20,6 @@ Required primary content:
 
 - decision question;
 - semantic summary;
-- recommended decision;
-- recommendation reason;
 - risks;
 - relevant facts;
 - materials needed for judgment;
@@ -36,6 +34,7 @@ Secondary context:
 - source label;
 - created time;
 - pending or resolved state;
+- agent proposal and reason;
 - stale or insufficient-materials state.
 
 Avoid showing by default:
@@ -53,6 +52,10 @@ with the human's decision surface.
 Place secondary context close to the decision question, preferably directly
 under the question and summary. Do not make humans scroll past judgment content
 to learn what request they are looking at.
+
+The source recommendation is the requesting agent's proposal, not independent
+evidence or the human's final answer. Label it as an agent proposal and keep it
+visually separate from the decision question and human response controls.
 
 Materials should be collapsed by default so long evidence does not dominate the
 workspace. Show material labels first; reveal links and short text summaries

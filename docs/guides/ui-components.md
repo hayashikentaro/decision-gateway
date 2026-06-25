@@ -23,7 +23,9 @@ An empty note means plain proceed; a non-empty note carries constraints or
 instructions. Do not add a separate primary button for proceeding with
 constraints.
 
-The source recommendation must not preselect the human decision unless the product explicitly chooses that behavior after review.
+The source recommendation must not preselect the human decision unless the
+product explicitly chooses that behavior after review. Label it as the
+requesting agent's proposal, not as independent evidence or the final answer.
 
 ## Materials
 

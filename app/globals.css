@@ -152,23 +152,28 @@ h3 {
   margin: 0;
 }
 
-.decision-brief {
+.agent-proposal {
   display: grid;
   gap: 12px;
+  background: #fbfcfe;
 }
 
-.decision-brief dl {
+.agent-proposal h2 {
+  font-size: 1.05rem;
+}
+
+.agent-proposal dl {
   display: grid;
   gap: 10px;
   margin: 0;
 }
 
-.decision-brief dt {
+.agent-proposal dt {
   color: var(--muted);
   font-weight: 800;
 }
 
-.decision-brief dd {
+.agent-proposal dd {
   margin: -6px 0 0;
   overflow-wrap: anywhere;
 }

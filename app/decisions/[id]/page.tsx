@@ -173,13 +173,13 @@ export default async function DecisionWorkspacePage({
             </div>
           </section>
 
-          <section className="panel decision-brief">
-            <p className="eyebrow">Decision brief</p>
-            <h2>Use the recommendation as context, then choose an action.</h2>
+          <section className="panel agent-proposal">
+            <p className="eyebrow">Agent proposal</p>
+            <h2>Suggested path from the requesting agent.</h2>
             <dl>
-              <dt>Recommendation</dt>
+              <dt>Suggested action</dt>
               <dd>{getRecommendationDecision(request.recommendedDecision)}</dd>
-              <dt>Reason</dt>
+              <dt>Agent reason</dt>
               <dd>{getRecommendationReason(request.recommendedDecision)}</dd>
             </dl>
           </section>

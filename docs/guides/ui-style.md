@@ -13,17 +13,42 @@ Decision Gateway UI should prioritize judgment clarity and low cognitive cost. T
 
 ## Decision Workspace Layout
 
-The workspace should make these elements easy to scan:
+The workspace should make human judgment information easy to scan. Treat
+workspace content in three groups.
+
+Required primary content:
 
 - decision question;
-- source and goal;
-- decision axis and urgency;
 - semantic summary;
-- materials;
 - recommended decision;
+- recommendation reason;
+- risks;
+- relevant facts;
+- materials needed for judgment;
 - human decision controls;
-- agent instruction field;
+- agent instruction field.
+
+Secondary context:
+
+- goal;
+- urgency;
+- decision axis;
+- source label;
+- created time;
+- pending or resolved state;
 - stale or insufficient-materials state.
+
+Avoid showing by default:
+
+- raw source JSON;
+- raw material JSON;
+- raw recommendation JSON;
+- raw request payloads;
+- internal routing identifiers such as source ids, task ids, session ids, or
+  connector instance ids.
+
+These technical details may be useful for debugging, but they should not compete
+with the human's decision surface.
 
 ## Notification Style
 

@@ -19,6 +19,36 @@ function stringify(value: unknown): string {
   return JSON.stringify(value, null, 2);
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+
+  return null;
+}
+
+function getRecommendationDecision(value: unknown): string {
+  const record = asRecord(value);
+  const decision = record?.decision;
+
+  if (typeof decision === "string" && decision.trim()) {
+    return decision;
+  }
+
+  return stringify(value);
+}
+
+function getRecommendationReason(value: unknown): string {
+  const record = asRecord(value);
+  const reason = record?.reason;
+
+  if (typeof reason === "string" && reason.trim()) {
+    return reason;
+  }
+
+  return "No separate reason was provided.";
+}
+
 function renderUnknownList(value: unknown, fallback: string) {
   if (Array.isArray(value) && value.length > 0) {
     return (
@@ -130,39 +160,10 @@ export default async function DecisionWorkspacePage({
             <h2>Use the recommendation as context, then choose an action.</h2>
             <dl>
               <dt>Recommendation</dt>
-              <dd>{stringify(request.recommendedDecision)}</dd>
-              <dt>Proceed</dt>
-              <dd>Continue with the recommendation, with optional constraints.</dd>
-              <dt>Revise plan</dt>
-              <dd>Send feedback and ask for a revised plan before work continues.</dd>
-              <dt>Need more information</dt>
-              <dd>Ask for missing facts, materials, or context before deciding.</dd>
+              <dd>{getRecommendationDecision(request.recommendedDecision)}</dd>
+              <dt>Reason</dt>
+              <dd>{getRecommendationReason(request.recommendedDecision)}</dd>
             </dl>
-          </section>
-
-          <section className="panel">
-            <h2>Context</h2>
-            <dl className="definition" style={{ marginTop: 14 }}>
-              <dt>Goal</dt>
-              <dd>{request.goal}</dd>
-              <dt>Source</dt>
-              <dd>
-                {sourceLabel}
-                <pre>{JSON.stringify(request.source, null, 2)}</pre>
-              </dd>
-              <dt>Request id</dt>
-              <dd>{request.requestId}</dd>
-              <dt>Created</dt>
-              <dd>{request.createdAt}</dd>
-            </dl>
-          </section>
-
-          <section className="panel">
-            <h2>Relevant facts</h2>
-            {renderUnknownList(
-              request.relevantFacts,
-              "No separate relevant facts were provided. Use the summary and materials.",
-            )}
           </section>
 
           <section className="panel">
@@ -174,36 +175,50 @@ export default async function DecisionWorkspacePage({
           </section>
 
           <section className="panel">
-            <h2>Recommended decision</h2>
-            <pre>{stringify(request.recommendedDecision)}</pre>
+            <h2>Relevant facts</h2>
+            {renderUnknownList(
+              request.relevantFacts,
+              "No separate relevant facts were provided. Use the summary and materials.",
+            )}
           </section>
 
-          <details>
-            <summary>Materials</summary>
+          <section className="panel">
+            <h2>Materials</h2>
             <div className="material-list">
               {request.materials.map((material, index) => (
                 <div className="material" key={index}>
                   <strong>{material.label ?? `Material ${index + 1}`}</strong>
-                  <p>Type: {material.type}</p>
                   {material.url ? (
                     <p>
                       <a href={material.url}>{material.url}</a>
                     </p>
                   ) : null}
                   {material.text ? <p>{material.text}</p> : null}
-                  <pre>{JSON.stringify(material, null, 2)}</pre>
                 </div>
               ))}
             </div>
-          </details>
+          </section>
+
+          <section className="panel secondary-context">
+            <h2>Context</h2>
+            <dl className="definition" style={{ marginTop: 14 }}>
+              <dt>Goal</dt>
+              <dd>{request.goal}</dd>
+              <dt>Urgency</dt>
+              <dd>{request.urgency}</dd>
+              <dt>Axis</dt>
+              <dd>{request.axis}</dd>
+              <dt>Source</dt>
+              <dd>{sourceLabel}</dd>
+              <dt>Status</dt>
+              <dd>{request.status}</dd>
+              <dt>Created</dt>
+              <dd>{request.createdAt}</dd>
+            </dl>
+          </section>
         </div>
 
         <DecisionActions request={request} />
-
-        <details>
-          <summary>Raw payload</summary>
-          <pre>{JSON.stringify(request.rawPayload, null, 2)}</pre>
-        </details>
       </div>
     </main>
   );

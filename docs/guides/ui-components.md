@@ -27,7 +27,12 @@ The source recommendation must not preselect the human decision unless the produ
 
 ## Materials
 
-Material components should show type, label, source, and safety-relevant metadata when available. Large or sensitive materials should open in the workspace, not in notifications.
+Material components should show the human-facing label, link, and concise text
+needed for the decision. Show type, source, or safety-relevant metadata only
+when it changes how the human should judge the material. Do not show raw
+material JSON in the default workspace view.
+
+Large or sensitive materials should open in the workspace, not in notifications.
 
 ## Empty And Error States
 

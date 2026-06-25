@@ -204,8 +204,8 @@ export default async function DecisionWorkspacePage({
             <h2>Materials</h2>
             <div className="material-list">
               {request.materials.map((material, index) => (
-                <div className="material" key={index}>
-                  <strong>{material.label ?? `Material ${index + 1}`}</strong>
+                <details className="material" key={index}>
+                  <summary>{material.label ?? `Material ${index + 1}`}</summary>
                   {material.url ? (
                     <p>
                       <a href={material.url}>{material.url}</a>
@@ -222,7 +222,7 @@ export default async function DecisionWorkspacePage({
                       ) : null}
                     </>
                   ) : null}
-                </div>
+                </details>
               ))}
             </div>
           </section>

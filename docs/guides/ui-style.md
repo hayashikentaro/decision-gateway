@@ -54,8 +54,10 @@ Place secondary context close to the decision question, preferably directly
 under the question and summary. Do not make humans scroll past judgment content
 to learn what request they are looking at.
 
-Materials should be concise by default. Show labels, links, and short text
-summaries first; put long text behind an explicit expansion control.
+Materials should be collapsed by default so long evidence does not dominate the
+workspace. Show material labels first; reveal links and short text summaries
+inside each expanded item, with long text behind an additional expansion
+control.
 
 ## Notification Style
 

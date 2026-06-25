@@ -250,6 +250,11 @@ h3 {
   min-width: 0;
 }
 
+.material summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+
 .material p {
   margin: 6px 0 0;
   color: var(--muted);

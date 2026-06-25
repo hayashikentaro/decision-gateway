@@ -352,6 +352,18 @@ input {
   color: var(--ink);
 }
 
+.button.close-action {
+  border-color: #111827;
+  background: #18202a;
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgb(24 32 42 / 0.18);
+}
+
+.button.close-action:hover:not(:disabled) {
+  border-color: #0b1220;
+  background: #111827;
+}
+
 .button.action-submit {
   width: 100%;
   min-height: 46px;

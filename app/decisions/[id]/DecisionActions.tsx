@@ -77,7 +77,7 @@ export function DecisionActions({ request }: Props) {
         </dl>
         <div className="button-row" style={{ marginTop: 16 }}>
           <button
-            className="button secondary"
+            className="button secondary close-action"
             onClick={closeTab}
             type="button"
           >

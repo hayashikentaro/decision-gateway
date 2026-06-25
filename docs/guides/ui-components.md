@@ -26,6 +26,8 @@ constraints.
 The source recommendation must not preselect the human decision unless the
 product explicitly chooses that behavior after review. Label it as the
 requesting agent's proposal, not as independent evidence or the final answer.
+Keep the proposal collapsed by default when the risk check already summarizes
+the concerns the human should review first.
 
 ## Materials
 

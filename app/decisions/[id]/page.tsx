@@ -152,14 +152,6 @@ export default async function DecisionWorkspacePage({
             <p className="eyebrow">Decision question</p>
             <h2>{request.decisionQuestion}</h2>
             <p className="summary">{request.semanticSummary}</p>
-            <dl className="context-summary" aria-label="Request context">
-              <dt>Goal</dt>
-              <dd>{request.goal}</dd>
-              <dt>Source</dt>
-              <dd>{sourceLabel}</dd>
-              <dt>Created</dt>
-              <dd>{request.createdAt}</dd>
-            </dl>
             <div className="meta">
               <span className="pill">
                 Axis <strong>{request.axis}</strong>
@@ -173,14 +165,16 @@ export default async function DecisionWorkspacePage({
             </div>
           </section>
 
-          <section className="panel agent-proposal">
-            <p className="eyebrow">Agent proposal</p>
-            <h2>Suggested path from the requesting agent.</h2>
-            <dl>
-              <dt>Suggested action</dt>
-              <dd>{getRecommendationDecision(request.recommendedDecision)}</dd>
-              <dt>Agent reason</dt>
-              <dd>{getRecommendationReason(request.recommendedDecision)}</dd>
+          <section className="panel request-context">
+            <p className="eyebrow">Request context</p>
+            <h2>Context</h2>
+            <dl className="context-summary" aria-label="Request context">
+              <dt>Goal</dt>
+              <dd>{request.goal}</dd>
+              <dt>Source</dt>
+              <dd>{sourceLabel}</dd>
+              <dt>Created</dt>
+              <dd>{request.createdAt}</dd>
             </dl>
           </section>
 
@@ -192,6 +186,17 @@ export default async function DecisionWorkspacePage({
               "No explicit risks were provided. Review the materials before deciding.",
             )}
           </section>
+
+          <details className="panel collapsible-section agent-proposal">
+            <summary>Agent proposal</summary>
+            <h2>Suggested path from the requesting agent.</h2>
+            <dl>
+              <dt>Suggested action</dt>
+              <dd>{getRecommendationDecision(request.recommendedDecision)}</dd>
+              <dt>Agent reason</dt>
+              <dd>{getRecommendationReason(request.recommendedDecision)}</dd>
+            </dl>
+          </details>
 
           <details className="panel collapsible-section">
             <summary>Relevant facts</summary>

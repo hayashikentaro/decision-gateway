@@ -20,17 +20,17 @@ Required primary content:
 
 - decision question;
 - semantic summary;
+- goal;
+- source label;
+- created time;
 - risks;
 - human decision controls;
 - agent instruction field.
 
 Secondary context:
 
-- goal;
 - urgency;
 - decision axis;
-- source label;
-- created time;
 - pending or resolved state;
 - agent proposal and reason;
 - relevant facts;
@@ -49,17 +49,17 @@ Avoid showing by default:
 These technical details may be useful for debugging, but they should not compete
 with the human's decision surface.
 
-Place secondary context close to the decision question, preferably directly
-under the question and summary. Do not make humans scroll past judgment content
-to learn what request they are looking at.
+Place goal, source label, and created time directly under the decision question
+and summary as a context section. Use the same visual format as other primary
+sections so humans do not have to parse a different metadata treatment.
 
 The source recommendation is the requesting agent's proposal, not independent
 evidence or the human's final answer. Label it as an agent proposal and keep it
-visually separate from the decision question and human response controls. Place
-the risk check directly after the agent proposal so the human sees the proposed
-path and the main concerns together.
+visually separate from the decision question and human response controls. Keep
+the risk check visible before the collapsed agent proposal so humans see the
+main concerns before expanding the source's suggested path.
 
-After the proposal and risk check, secondary information should be collapsed by
+After the context and risk check, secondary information should be collapsed by
 default so supporting evidence does not dominate the workspace. Show material
 labels first; reveal links and short text summaries inside each expanded item,
 with long text behind an additional expansion control.

@@ -133,13 +133,17 @@ h3 {
   color: var(--muted);
 }
 
+.request-context,
+.risk-brief {
+  display: grid;
+  gap: 12px;
+}
+
 .context-summary {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
   gap: 6px 12px;
-  margin: 14px 0 0;
-  padding-top: 14px;
-  border-top: 1px solid var(--line);
+  margin: 0;
 }
 
 .context-summary dt {
@@ -176,11 +180,6 @@ h3 {
 .agent-proposal dd {
   margin: -6px 0 0;
   overflow-wrap: anywhere;
-}
-
-.risk-brief {
-  display: grid;
-  gap: 12px;
 }
 
 .collapsible-section summary {

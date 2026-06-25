@@ -178,6 +178,16 @@ h3 {
   overflow-wrap: anywhere;
 }
 
+.risk-brief {
+  display: grid;
+  gap: 12px;
+}
+
+.collapsible-section summary {
+  font-size: 1.35rem;
+  line-height: 1.15;
+}
+
 .meta {
   display: flex;
   flex-wrap: wrap;

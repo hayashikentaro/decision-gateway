@@ -184,7 +184,8 @@ export default async function DecisionWorkspacePage({
             </dl>
           </section>
 
-          <section className="panel">
+          <section className="panel risk-brief">
+            <p className="eyebrow">Risk check</p>
             <h2>Risks</h2>
             {renderUnknownList(
               request.risks,
@@ -192,16 +193,16 @@ export default async function DecisionWorkspacePage({
             )}
           </section>
 
-          <section className="panel">
-            <h2>Relevant facts</h2>
+          <details className="panel collapsible-section">
+            <summary>Relevant facts</summary>
             {renderUnknownList(
               request.relevantFacts,
               "No separate relevant facts were provided. Use the summary and materials.",
             )}
-          </section>
+          </details>
 
-          <section className="panel">
-            <h2>Materials</h2>
+          <details className="panel collapsible-section">
+            <summary>Materials</summary>
             <div className="material-list">
               {request.materials.map((material, index) => (
                 <details className="material" key={index}>
@@ -225,7 +226,7 @@ export default async function DecisionWorkspacePage({
                 </details>
               ))}
             </div>
-          </section>
+          </details>
         </div>
 
         <DecisionActions request={request} />

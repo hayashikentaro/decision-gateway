@@ -21,8 +21,6 @@ Required primary content:
 - decision question;
 - semantic summary;
 - risks;
-- relevant facts;
-- materials needed for judgment;
 - human decision controls;
 - agent instruction field.
 
@@ -35,6 +33,8 @@ Secondary context:
 - created time;
 - pending or resolved state;
 - agent proposal and reason;
+- relevant facts;
+- materials needed for judgment;
 - stale or insufficient-materials state.
 
 Avoid showing by default:
@@ -55,12 +55,14 @@ to learn what request they are looking at.
 
 The source recommendation is the requesting agent's proposal, not independent
 evidence or the human's final answer. Label it as an agent proposal and keep it
-visually separate from the decision question and human response controls.
+visually separate from the decision question and human response controls. Place
+the risk check directly after the agent proposal so the human sees the proposed
+path and the main concerns together.
 
-Materials should be collapsed by default so long evidence does not dominate the
-workspace. Show material labels first; reveal links and short text summaries
-inside each expanded item, with long text behind an additional expansion
-control.
+After the proposal and risk check, secondary information should be collapsed by
+default so supporting evidence does not dominate the workspace. Show material
+labels first; reveal links and short text summaries inside each expanded item,
+with long text behind an additional expansion control.
 
 ## Notification Style
 

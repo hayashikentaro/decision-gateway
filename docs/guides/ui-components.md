@@ -29,12 +29,13 @@ requesting agent's proposal, not as independent evidence or the final answer.
 
 ## Materials
 
-Material components should show the human-facing label, link, and concise text
-needed for the decision. Show type, source, or safety-relevant metadata only
-when it changes how the human should judge the material. Do not show raw
-material JSON in the default workspace view. Material items should be collapsed
-by default. When opened, long material text should still be summarized or
-truncated first, with the full text available behind a second expansion control.
+Material sections and material items should be collapsed by default. When
+opened, material components should show the human-facing label, link, and
+concise text needed for the decision. Show type, source, or safety-relevant
+metadata only when it changes how the human should judge the material. Do not
+show raw material JSON in the default workspace view. Long material text should
+still be summarized or truncated first, with the full text available behind a
+second expansion control.
 
 Large or sensitive materials should open in the workspace, not in notifications.
 

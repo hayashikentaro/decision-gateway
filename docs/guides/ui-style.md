@@ -50,6 +50,13 @@ Avoid showing by default:
 These technical details may be useful for debugging, but they should not compete
 with the human's decision surface.
 
+Place secondary context close to the decision question, preferably directly
+under the question and summary. Do not make humans scroll past judgment content
+to learn what request they are looking at.
+
+Materials should be concise by default. Show labels, links, and short text
+summaries first; put long text behind an explicit expansion control.
+
 ## Notification Style
 
 Notifications are entry points. They should include enough context to decide whether to open the workspace, not enough to decide in the notification itself.

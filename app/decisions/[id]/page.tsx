@@ -49,6 +49,16 @@ function getRecommendationReason(value: unknown): string {
   return "No separate reason was provided.";
 }
 
+function truncateText(value: string, maxLength = 260): string {
+  const normalized = value.replace(/\s+/g, " ").trim();
+
+  if (normalized.length <= maxLength) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, maxLength - 1).trimEnd()}...`;
+}
+
 function renderUnknownList(value: unknown, fallback: string) {
   if (Array.isArray(value) && value.length > 0) {
     return (
@@ -142,6 +152,14 @@ export default async function DecisionWorkspacePage({
             <p className="eyebrow">Decision question</p>
             <h2>{request.decisionQuestion}</h2>
             <p className="summary">{request.semanticSummary}</p>
+            <dl className="context-summary" aria-label="Request context">
+              <dt>Goal</dt>
+              <dd>{request.goal}</dd>
+              <dt>Source</dt>
+              <dd>{sourceLabel}</dd>
+              <dt>Created</dt>
+              <dd>{request.createdAt}</dd>
+            </dl>
             <div className="meta">
               <span className="pill">
                 Axis <strong>{request.axis}</strong>
@@ -193,28 +211,20 @@ export default async function DecisionWorkspacePage({
                       <a href={material.url}>{material.url}</a>
                     </p>
                   ) : null}
-                  {material.text ? <p>{material.text}</p> : null}
+                  {material.text ? (
+                    <>
+                      <p>{truncateText(material.text)}</p>
+                      {material.text.trim().length > 260 ? (
+                        <details className="inline-details">
+                          <summary>Read full material text</summary>
+                          <p>{material.text}</p>
+                        </details>
+                      ) : null}
+                    </>
+                  ) : null}
                 </div>
               ))}
             </div>
-          </section>
-
-          <section className="panel secondary-context">
-            <h2>Context</h2>
-            <dl className="definition" style={{ marginTop: 14 }}>
-              <dt>Goal</dt>
-              <dd>{request.goal}</dd>
-              <dt>Urgency</dt>
-              <dd>{request.urgency}</dd>
-              <dt>Axis</dt>
-              <dd>{request.axis}</dd>
-              <dt>Source</dt>
-              <dd>{sourceLabel}</dd>
-              <dt>Status</dt>
-              <dd>{request.status}</dd>
-              <dt>Created</dt>
-              <dd>{request.createdAt}</dd>
-            </dl>
           </section>
         </div>
 

@@ -133,6 +133,25 @@ h3 {
   color: var(--muted);
 }
 
+.context-summary {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 6px 12px;
+  margin: 14px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.context-summary dt {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.context-summary dd {
+  margin: 0;
+}
+
 .decision-brief {
   display: grid;
   gap: 12px;
@@ -234,6 +253,18 @@ h3 {
 .material p {
   margin: 6px 0 0;
   color: var(--muted);
+}
+
+.material .inline-details {
+  margin-top: 8px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.material .inline-details p {
+  color: var(--ink);
 }
 
 details {

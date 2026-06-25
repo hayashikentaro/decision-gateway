@@ -117,7 +117,7 @@ export function DecisionActions({ request }: Props) {
             placeholder="Optional: constraints for proceeding"
           />
           <button
-            className="button secondary"
+            className="button action-submit primary-action"
             disabled={pendingAction !== null}
             type="submit"
           >
@@ -138,7 +138,7 @@ export function DecisionActions({ request }: Props) {
             placeholder="What should change before retrying?"
           />
           <button
-            className="button secondary"
+            className="button action-submit"
             disabled={pendingAction !== null}
             type="submit"
           >
@@ -158,7 +158,7 @@ export function DecisionActions({ request }: Props) {
             placeholder="What facts or materials are missing?"
           />
           <button
-            className="button secondary"
+            className="button action-submit"
             disabled={pendingAction !== null}
             type="submit"
           >
